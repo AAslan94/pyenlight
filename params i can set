@@ -1,0 +1,139 @@
+environment:
+
+    dimensions (list/array): Room L, W, H. (Fallback: config.env.room_dim)
+
+    wall_resolution (int or list): Discretization grid. (Fallback: config.env.wall_resolution)
+
+    reflectivity (dict): floor, ceiling, walls. (Fallback: config.env.reflectivity)
+
+    special_surfaces (list of dicts): Add RIS or window objects defining center, dims, const_axis, resolution, normal, reflectivity, name, and sun_power.
+
+    blockers: Reserved key, currently passes None.
+
+    nodes (Contains masters, sensors, ambient_nodes):
+
+    positions (array): The only strictly required parameter.
+
+    nT, nR: Transmit/Receive normals. (Fallback: -z for masters, +z for sensors)
+
+    rx_area, FOV, m (Lambertian order). (Fallback: config.env values)
+
+    tx_power, IR_tx_power, RF_tx_power. (Fallback: config.comm / config.devices)
+
+    rx_type (0=PD, 1=PV) and uplink_type (0=IR, 1=RF).
+
+    sensitivity, VLC_pass_filter, IR_pass_filter.
+
+energy_profile -> communication:
+
+    Rb_down, Rb_up, n_sp_d, n_sp_u (bitrates and filter spans). (Fallback: config.comm)
+
+    TIA:
+
+    Top-level dictionary for TIA electrical noise parameters (RF, CF, Vn, In, etc.). (Fallback: config.devices.tia)
+
+    PV_circuit:
+
+    Top-level dictionary for PV harvesting physics (Voc, Jsc, Rs, Rsh, etc.). (Fallback: config.devices.pv_circuit)
+
+
+import numpy as np
+
+master_design_example = {
+    "environment": {
+        "dimensions": [5.0, 5.0, 3.0], # L, W, H in meters
+        "wall_resolution": [20, 20],   # Grid patches for diffuse reflections
+        "reflectivity": {
+            "floor": 0.2,
+            "ceiling": 0.8,
+            "walls": 0.6
+        },
+        "special_surfaces": [
+            {
+                "type": "window",
+                "name": "South Window",
+                "center": [2.5, 0.0, 1.5], # On the south wall (y=0)
+                "dims": [2.0, 1.5],
+                "const_axis": 1,           # Constant on the Y axis
+                "resolution": [10, 10],
+                "normal": [0, 1, 0],       # Pointing into the room
+                "reflectivity": 0.1,
+                "sun_power": 0.8           # Multiplier for max solar irradiance
+            },
+            {
+                "type": "RIS",
+                "name": "Wall Reflector",
+                "center": [5.0, 2.5, 1.5], # On the east wall (x=L)
+                "dims": [1.0, 1.0],
+                "const_axis": 0,           # Constant on the X axis
+                "resolution": [5, 5],
+                "normal": [-1, 0, 0],      # Pointing into the room (-x)
+                "reflectivity": 0.95
+            }
+        ],
+        "blockers": [] # Reserved for future obstacle logic
+    },
+    
+    "nodes": {
+        "masters": {
+            "positions": np.array([[2.5, 2.5, 3.0]]), # Ceiling center
+            "nT": [0, 0, -1],   # TX pointing down
+            "nR": [0, 0, -1],   # RX pointing down
+            "rx_area": 1e-4,    # 1 cm^2
+            "m": 1,             # Lambertian order
+            "FOV": 1.5708,      # 90 degrees
+            "tx_power": 1.0,    # Downlink VLC Power (W)
+            "sensitivity": -100,
+            "IR_pass_filter": True
+        },
+        "sensors": {
+            "positions": np.array([[1.0, 1.0, 0.85], [4.0, 4.0, 0.85]]), # Desk height
+            "nT": [0, 0, 1],    # TX pointing up
+            "nR": [0, 0, 1],    # RX pointing up
+            "rx_area": 1e-4,
+            "m": 1,
+            "FOV": 1.5708,
+            "rx_type": 0,       # 0 = Photodiode, 1 = Solar Panel (PV)
+            "uplink_type": 0,   # 0 = Infrared (OW), 1 = RF
+            "IR_tx_power": 15e-3, # 15 mW
+            "RF_tx_power": -20.0, # dBm
+            "sensitivity": -100,
+            "VLC_pass_filter": False
+        },
+        "ambient_nodes": {
+            "positions": np.array([[1.0, 2.5, 3.0], [4.0, 2.5, 3.0]]), # Interfering lamps
+            "nT": [0, 0, -1],
+            "nR": [0, 0, -1],
+            "m": 1,
+            "tx_power": 0.5 
+        }
+    },
+    
+    "energy_profile": {
+        "communication": {
+            "Rb_down": 10e3,  # Downlink Bitrate
+            "n_sp_d": 0.4,    # Downlink Filter span
+            "Rb_up": 10e3,    # Uplink Bitrate (can also be array per sensor)
+            "n_sp_u": 0.4     # Uplink Filter span
+        }
+    },
+    
+    "TIA": {
+        "RF": 1e6,
+        "CF": 1e-9,
+        "Vn": 15e-9,
+        "In": 400e-15,
+        "fncV": 1e3,
+        "fncI": 1e3,
+        "temperature": 300.0
+    },
+    
+    "PV_circuit": {
+        "A": 1e-4,
+        "n": 1.6,
+        "Rs": 1.0,
+        "Rsh": 1000.0,
+        "Voc": 0.64,
+        "Jsc": 35e-3
+    }
+}

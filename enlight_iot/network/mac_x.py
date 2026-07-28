@@ -297,66 +297,28 @@ class VLC_Channel:
             self._active_mac_nodes.clear()
 
     def start_tx(self, node_id: int):
-        """
-        Start a transmission.
-
-        Two overlapping transmissions collide at the AP only when both
-        transmitters can reach the AP according to the UL PHY threshold.
-        """
-
         if self._active_tx:
             for tx_id in list(self._active_tx):
-
-                new_reaches_ap = self.reaches_ap(node_id)
-                active_reaches_ap = self.reaches_ap(tx_id)
-
-                if new_reaches_ap and active_reaches_ap:
-                    self._collided.add(tx_id)
-                    self._collided.add(node_id)
-
-                    hidden_str = (
-                        f"node {node_id} CANNOT hear node {tx_id} "
-                        f"-- hidden-node collision"
-                        if not self.can_hear(node_id, tx_id)
-                        else
-                        f"node {node_id} CAN hear node {tx_id} "
-                        f"-- concurrent-transmission collision"
-                        )
-
-                    _log_channel(
-                        self.env,
-                        f"COLLISION -- Node {node_id} started TX while "
-                        f"Node {tx_id} was already transmitting "
-                        f"({hidden_str})",
-                        self._debug,
-                        )
-
-                else:
-                    blocked_nodes = []
-
-                    if not active_reaches_ap:
-                        blocked_nodes.append(str(tx_id))
-
-                    if not new_reaches_ap:
-                        blocked_nodes.append(str(node_id))
-
-                    _log_channel(
-                        self.env,
-                        f"NO AP COLLISION -- Nodes {tx_id} and {node_id} "
-                        f"overlap, but node(s) {', '.join(blocked_nodes)} "
-                        f"do not reach the AP",
-                        self._debug,
-                        )
+                self._collided.add(tx_id)
+                self._collided.add(node_id)
+                hidden_str = (
+                    f"node {node_id} CANNOT hear node {tx_id} -- hidden node collision!"
+                    if not self.can_hear(node_id, tx_id)
+                    else f"node {node_id} CAN hear node {tx_id} -- normal collision"
+                )
+                _log_channel(
+                    self.env,
+                    f"COLLISION -- Node {node_id} started TX while Node {tx_id} "
+                    f"already transmitting ({hidden_str})",
+                    self._debug,
+                )
 
         self._active_tx[node_id] = self.env.now
-
         _log_channel(
             self.env,
-            f"Node {node_id} started TX | "
-            f"reaches_ap={self.reaches_ap(node_id)} | "
-            f"active_tx={list(self._active_tx.keys())}",
+            f"Node {node_id} started TX | active_tx={list(self._active_tx.keys())}",
             self._debug,
-            )
+        )
 
     def end_tx(self, node_id: int) -> bool:
         """Returns True if transmission was successful, i.e. no collision."""
@@ -733,7 +695,6 @@ def run_sim(
         hidden_node_mask=hidden_node_mask,
         bt_hidden_mask=bt_hidden_mask,
         btma_mode=btma_mode,
-        ap_reachable=phy_pdr_up,
         debug=debug,
     )
 

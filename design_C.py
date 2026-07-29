@@ -1,10 +1,6 @@
 import numpy as np
 from enlight_iot.core.utils import generate_grid, diagonal_points, align_to 
 
-bw_a1 = np.load("bw_a1.npy")
-u_b = bw_a1.reshape(-1,)*0.4
-
-
 
 def generate_focusing_normals(center, dims, resolution, const_axis, light_pos, target_pos):
     """
@@ -74,9 +70,9 @@ master_design_example = {
             {
                 "type": "window",
                 "name": "South Window",
-                "center": [0, 2.5, 1.5], # On the south wall (y=0)
+                "center": [0, 2.5, 1.5], 
                 "dims": [1, 1],
-                "const_axis": 0,           # Constant on the Y axis
+                "const_axis": 0,           # Constant on the X axis
                 "resolution": [20, 20],
                 "normal": [1, 0, 0],       # Pointing into the room
                 "reflectivity": 0.05,
@@ -88,19 +84,19 @@ master_design_example = {
                 "dims": [1.0, 1.0],        # 1 square meter
                 "const_axis": 0,           # Constant on the X axis
                 "resolution": [10, 10],
-                # Recalculated bisector to bounce light specifically to [4.5, 0.2, 0.0]
+                # calculated bisector to bounce light specifically to [4.5, 0.2, 0.0]
                 "normal":ris1_focus_normals, 
                 "reflectivity": 0.95
             },
             
             {
                 "type": "RIS",
-                "name": "Mirror 1 (Targets Blocker 1 Shadow)",
+                "name": "Mirror 2 (Targets Blocker 2 Shadow)",
                 "center": [5.0, 3, 2], # Placed high on the East Wall
                 "dims": [1.0, 1.0],        # 1 square meter
                 "const_axis": 0,           # Constant on the X axis
                 "resolution": [10, 10],
-                # Recalculated bisector to bounce light specifically to [4.5, 0.2, 0.0]
+                # calculated bisector to bounce light specifically to [4.5, 0.2, 0.0]
                 "normal":ris2_focus_normals, 
                 "reflectivity": 0.95
             },
@@ -131,9 +127,6 @@ master_design_example = {
         "sensors": {
             "positions": generate_grid(0.2,4.8,0.2,4.8,0,60,60,False), 
             "nT": [0, 0, 1],    # TX pointing up
-            #"nR": align_to(generate_grid(0.2,4.8,0.2,4.8,0,60,60,False),np.array([2.5,2.5,3])), 
-            #"nT": -align_to(np.array([2.5,2.5,3]),generate_grid(0.2,4.8,0.2,4.8,0,60,60,False)),
-            #"nR": np.array([0,0,1]),
             "rx_area": 1e-4,
             "m": 1,
             "FOV": np.pi/2,
@@ -156,9 +149,9 @@ master_design_example = {
         "T_cycle": 60,
         "communication": {
             "Rb_down": 10e3,  # Downlink Bitrate
-            "n_sp_d": 0.4,    # Downlink Filter span
+            "n_sp_d": 0.4,    # Downlink spectral efficiency
             "Rb_up": 10e3,    # Uplink Bitrate (can also be array per sensor)
-            "n_sp_u": 0.4     # Uplink Filter span
+            "n_sp_u": 0.4     # Uplink spectral efficiency
         }
     },
     
@@ -170,14 +163,7 @@ master_design_example = {
         "fncI": 1e3,
         "temperature": 300.0
     },
-    
-    #"PV_circuit": {
-    #    "n": 1.6,
-    #    "Rs": 1.0,
-    #    "Rsh": 1000.0,
-    #    "Voc": 0.64,
-    #    "Jsc": 35e-3
-    #}
+
 }
 
 

@@ -1,10 +1,11 @@
 import numpy as np
 import json
+import os
 from dataclasses import asdict
 import matplotlib.pyplot as plt
 from enlight_iot import EnLightConfig, PhyNet, EnergyManager
 from enlight_iot.core.interface import PhyResultsDTO  
-from design_B1 import master_design_example 
+from design_B import master_design_example 
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -41,19 +42,19 @@ def run_experiment(design_dict, run_name="exp_001", run_budget=False, btma_mode=
     pn = PhyNet(design_dict, budget_run=run_budget, btma_mode = btma_mode, **kwargs)
 
     
-    # Save the reporting matrices (Old method untouched for plotting)
+    # Save the reporting matrices 
     pn.save_phy_state(f"{run_name}_phy_matrices.npz")
     
-    # ── B. Export and Save the Telemetry Explicitly ──
+    
     dto = pn.export_energy_telemetry()
     telemetry_filepath = f"{run_name}_phy_telemetry.npz"
     dto.save_npz(telemetry_filepath)
     print(f"[{run_name}] Telemetry saved to {telemetry_filepath}")
 
-    # ── C. Load Telemetry and Run Energy/MAC Simulator ──
+    #
     print(f"[{run_name}] Running Dual MAC Simulations & Energy Manager...")
     
-    # Strictly load the DTO from disk to prove complete decoupling
+    # Load the DTO from disk 
     loaded_dto = PhyResultsDTO.load_npz(telemetry_filepath)
     
     # NOTE: verbose=False turns off the node-by-node warning prints in the terminal
@@ -97,13 +98,13 @@ def run_system_test():
     print("\n[1/3] Loading Configuration...")
     config = EnLightConfig()
 
-    # The wrapper handles initialization and ALL the safe saving mechanics
+    # The wrapper handles initialization and the safe saving mechanics
     df = run_experiment(
         design_dict=master_design_example,
-        run_name="experiment_1",
+        run_name="experiment_B",
         run_budget=False,
         btma_mode=True,
-        config=config # Explicitly pass config to prevent any positional bugs down the line
+        config=config 
     )
 
     print("\n" + "=" * 60)
@@ -113,14 +114,13 @@ def run_system_test():
 if __name__ == "__main__":
     run_system_test()
     
+    os.makedirs("plots/B", exist_ok=True)
     
     #plot SNR across the floor 
-    # --- 1. Define physical room dimensions (in meters) ---
+   
     room_length_x = 5.0
     room_width_y = 5.0
 
-    # --- 2. Load the telemetry data ---
-    #data = np.load('experiment_1_phy_telemetry.npz')
     snr_downlink = pn.snr_d_dB
     
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/b1/snr_d_pd_b.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_d_pd_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()
         
     #plot required power
@@ -214,15 +214,13 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/b1/snr_d_diff_b.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_d_diff_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()
         
         
     room_length_x = 5.0
     room_width_y = 5.0
 
-    # --- 2. Load the telemetry data ---
-    #data = np.load('experiment_1_phy_telemetry.npz')
     snr_uplink = pn.snr_u_dB
     
 
@@ -266,7 +264,7 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/b1/snr_u_b.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_u_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()
         
     #plot required power
@@ -315,5 +313,5 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/b1/snr_u_diff_b.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_u_diff_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()

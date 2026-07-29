@@ -82,7 +82,7 @@ class CommConfig:
     bit_rate_dw: float = 10e3        
     t_init: float = 5e-3            
     t_wait: float = 1e-3           
-    T_cycle: float = 1.0          
+    T_cycle: float = 60.0          
     harvesting_hours: float = 5.0     
     n_sp: float = 0.4               
 

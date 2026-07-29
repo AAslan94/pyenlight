@@ -1,7 +1,0 @@
-setup.py
-enlight_iot/__init__.py
-enlight_iot.egg-info/PKG-INFO
-enlight_iot.egg-info/SOURCES.txt
-enlight_iot.egg-info/dependency_links.txt
-enlight_iot.egg-info/requires.txt
-enlight_iot.egg-info/top_level.txt

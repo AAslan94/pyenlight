@@ -1,16 +1,21 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 
 setup(
-    name="enlight_iot",
+    name="pyenlight",
     version="1.0.0",
-    description="A modular framework for Optical and Wireless 6G/IoT scenarios",
+    description=(
+        "A cross-layer simulation framework for indoor optical "
+        "and hybrid optical/RF IoT networks"
+    ),
     author="Alexandros Aslanidis",
     packages=find_packages(),
     install_requires=[
         "numpy",
         "scipy",
         "matplotlib",
-        "simpy"
+        "simpy",
+        "pandas",
     ],
     python_requires=">=3.8",
 )

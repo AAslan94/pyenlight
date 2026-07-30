@@ -1,5 +1,5 @@
 import numpy as np
-from enlight_iot.core.utils import generate_grid, diagonal_points, align_to 
+from pyenlight.core.utils import generate_grid, diagonal_points, align_to 
 
 bw_a1 = np.load("bw_a1.npy")
 u_b = bw_a1.reshape(-1,)*0.4

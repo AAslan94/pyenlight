@@ -3,8 +3,8 @@ import json
 import os
 from dataclasses import asdict
 import matplotlib.pyplot as plt
-from enlight_iot import EnLightConfig, PhyNet, EnergyManager
-from enlight_iot.core.interface import PhyResultsDTO  # <--- Import the new DTO
+from pyenlight import EnLightConfig, PhyNet, EnergyManager
+from pyenlight.core.interface import PhyResultsDTO  # <--- Import the new DTO
 from design_C import master_design_example 
 
 
@@ -32,13 +32,14 @@ def run_experiment(design_dict, run_name="exp_001", run_budget=False, btma_mode=
     
     pn = PhyNet(design_dict, budget_run=run_budget, btma_mode = btma_mode, **kwargs)
 
+    os.makedirs(f'results_{run_name}',exist_ok=True)
     
     # Save the reporting matrices
-    pn.save_phy_state(f"{run_name}_phy_matrices.npz")
+    pn.save_phy_state(f"results_{run_name}/{run_name}_phy_matrices.npz")
     
     # ── B. Export and Save  ──
     dto = pn.export_energy_telemetry()
-    telemetry_filepath = f"{run_name}_phy_telemetry.npz"
+    telemetry_filepath = f"results_{run_name}/{run_name}_phy_telemetry.npz"
     dto.save_npz(telemetry_filepath)
     print(f"[{run_name}] Telemetry saved to {telemetry_filepath}")
 
@@ -67,13 +68,13 @@ def run_experiment(design_dict, run_name="exp_001", run_budget=False, btma_mode=
             "RF_nodes_dBm": actual_rf_tx
         },
         "original_user_design": design_dict,
-        "full_system_config": asdict(pn.config) # <--- Captures every single default parameter!
+        "full_system_config": asdict(pn.config) 
     }
 
     # ── D. Save Final Results ──
-    results_df.to_csv(f"{run_name}_results.csv", index=False)
+    results_df.to_csv(f"results_{run_name}/{run_name}_results.csv", index=False)
     
-    with open(f"{run_name}_metadata.json", 'w') as f:
+    with open(f"results_{run_name}/{run_name}_metadata.json", 'w') as f:
         json.dump(experiment_metadata, f, indent=4, cls=NumpyEncoder)
         
     print(f"[{run_name}] Data saved successfully -> .csv, .npz (x2), and .json")

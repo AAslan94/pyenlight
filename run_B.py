@@ -5,8 +5,7 @@ from dataclasses import asdict
 import matplotlib.pyplot as plt
 from pyenlight import EnLightConfig, PhyNet, EnergyManager
 from pyenlight.core.interface import PhyResultsDTO  
-from design_D import master_design_example 
-
+from design_B import master_design_example 
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -43,25 +42,26 @@ def run_experiment(design_dict, run_name="exp_001", run_budget=False, btma_mode=
     pn = PhyNet(design_dict, budget_run=run_budget, btma_mode = btma_mode, **kwargs)
 
     os.makedirs(f'results_{run_name}',exist_ok=True)
+
     # Save the reporting matrices 
     pn.save_phy_state(f"results_{run_name}/{run_name}_phy_matrices.npz")
     
-    # ── B. Export and save
+    
     dto = pn.export_energy_telemetry()
     telemetry_filepath = f"results_{run_name}/{run_name}_phy_telemetry.npz"
     dto.save_npz(telemetry_filepath)
     print(f"[{run_name}] Telemetry saved to {telemetry_filepath}")
 
-    # ── C. Load results and Run Energy/MAC Simulator ──
+    #
     print(f"[{run_name}] Running Dual MAC Simulations & Energy Manager...")
     
-    # Load the DTO from disk
+    # Load the DTO from disk 
     loaded_dto = PhyResultsDTO.load_npz(telemetry_filepath)
     
     # NOTE: verbose=False turns off the node-by-node warning prints in the terminal
     em = EnergyManager(loaded_dto, design_dict, MAC=False, btma_mode=btma_mode, **kwargs)
     
-    # Extract data
+    # Extract Tabular Data
     results_df = em.get_results_df()
     
     # Extract Actual Transmit Powers used (Catches dynamic changes if run_budget=True)
@@ -77,7 +77,7 @@ def run_experiment(design_dict, run_name="exp_001", run_budget=False, btma_mode=
             "RF_nodes_dBm": actual_rf_tx
         },
         "original_user_design": design_dict,
-        "full_system_config": asdict(pn.config) 
+        "full_system_config": asdict(pn.config) # <--- Captures every single default parameter!
     }
 
     # ── D. Save Final Results ──
@@ -99,13 +99,13 @@ def run_system_test():
     print("\n[1/3] Loading Configuration...")
     config = EnLightConfig()
 
-    # The wrapper handles initialization and ALL the safe saving mechanics
+    # The wrapper handles initialization and the safe saving mechanics
     df = run_experiment(
         design_dict=master_design_example,
-        run_name="experiment_D",
+        run_name="experiment_B",
         run_budget=False,
         btma_mode=True,
-        config=config # Explicitly pass config
+        config=config 
     )
 
     print("\n" + "=" * 60)
@@ -115,10 +115,10 @@ def run_system_test():
 if __name__ == "__main__":
     run_system_test()
     
-    os.makedirs("plots/D", exist_ok=True)
+    os.makedirs("plots/B", exist_ok=True)
     
     #plot SNR across the floor 
-    
+   
     room_length_x = 5.0
     room_width_y = 5.0
 
@@ -153,7 +153,9 @@ if __name__ == "__main__":
             masked_snr_grid,
             cmap=cmap,
             origin='lower',
-            extent=[0, room_length_x, 0, room_width_y]
+            extent=[0, room_length_x, 0, room_width_y],
+            vmax = 55.4,
+            vmin = 30
         )
 
         cbar = plt.colorbar(im)
@@ -165,7 +167,7 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/D/snr_d_pv.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_d_pd_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()
         
     #plot required power
@@ -183,15 +185,66 @@ if __name__ == "__main__":
     num_sensors = len(snr_downlink)
     grid_side   = int(np.sqrt(num_sensors))
     
-    bw_downlink = pn.pvx.BW
+    snr_d_diff = pn.snr_d_diff_dB
 
     if grid_side**2 != num_sensors:
         print(f"Warning: {num_sensors} sensors do not form a perfect square.")
     else:
-        snr_grid        = bw_downlink.reshape((grid_side, grid_side))/1000
+        snr_grid        = snr_d_diff.reshape((grid_side, grid_side))
         masked_snr_grid = np.ma.masked_where(snr_grid <= -1, snr_grid)
 
-        cmap = plt.cm.inferno.copy()
+        cmap = plt.cm.plasma.copy()
+        cmap.set_bad(color='black')
+
+        plt.figure(figsize=(8, 6))
+
+        im = plt.imshow(
+            masked_snr_grid,
+            cmap=cmap,
+            origin='lower',
+            extent=[0, room_length_x, 0, room_width_y],
+            vmin = 30
+        )
+
+        cbar = plt.colorbar(im)
+        cbar.set_label('$SNR_d$ [dB]', fontsize=LABEL_SIZE)
+        cbar.ax.tick_params(labelsize=TICK_SIZE)
+
+        plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
+        plt.ylabel('$y$ [m]', fontsize=LABEL_SIZE)
+        plt.tick_params(axis='both', labelsize=TICK_SIZE)
+
+        plt.tight_layout()
+        plt.savefig("plots/B/snr_d_diff_b.pdf", format="pdf", bbox_inches="tight")
+        plt.show()
+        
+        
+    room_length_x = 5.0
+    room_width_y = 5.0
+
+    snr_uplink = pn.snr_u_dB
+    
+
+    # Font sizes
+    LABEL_SIZE = 16
+    TICK_SIZE  = 16
+
+    room_length_x = 5.0
+    room_width_y  = 5.0
+
+    
+   
+
+    num_sensors = len(snr_downlink)
+    grid_side   = int(np.sqrt(num_sensors))
+
+    if grid_side**2 != num_sensors:
+        print(f"Warning: {num_sensors} sensors do not form a perfect square.")
+    else:
+        snr_grid        = snr_uplink.reshape((grid_side, grid_side))
+        masked_snr_grid = np.ma.masked_where(snr_grid <= -0, snr_grid)
+
+        cmap = plt.cm.cividis.copy()
         cmap.set_bad(color='black')
 
         plt.figure(figsize=(8, 6))
@@ -204,7 +257,7 @@ if __name__ == "__main__":
         )
 
         cbar = plt.colorbar(im)
-        cbar.set_label('$B_\mathrm{PV}$ [kHz]', fontsize=LABEL_SIZE)
+        cbar.set_label('$SNR_u$ [dB]', fontsize=LABEL_SIZE)
         cbar.ax.tick_params(labelsize=TICK_SIZE)
 
         plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
@@ -212,19 +265,33 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/D/bpv.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_u_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()
         
-        
-    rf_pl = pn.hrf
+    #plot required power
+
+    # Font sizes
+    LABEL_SIZE = 16
+    TICK_SIZE  = 16
+
+    room_length_x = 5.0
+    room_width_y  = 5.0
+
+   
+   
+
+    num_sensors = len(snr_downlink)
+    grid_side   = int(np.sqrt(num_sensors))
+    
+    snr_u_diff = pn.snr_u_diff_dB
 
     if grid_side**2 != num_sensors:
         print(f"Warning: {num_sensors} sensors do not form a perfect square.")
     else:
-        snr_grid        = rf_pl.reshape((grid_side, grid_side))
+        snr_grid        = snr_u_diff.reshape((grid_side, grid_side))
         masked_snr_grid = np.ma.masked_where(snr_grid <= -1, snr_grid)
 
-        cmap = plt.cm.viridis.copy()
+        cmap = plt.cm.turbo.copy()
         cmap.set_bad(color='black')
 
         plt.figure(figsize=(8, 6))
@@ -233,11 +300,13 @@ if __name__ == "__main__":
             masked_snr_grid,
             cmap=cmap,
             origin='lower',
-            extent=[0, room_length_x, 0, room_width_y]
+            extent=[0, room_length_x, 0, room_width_y],
+            vmin = 4,
+            vmax = 9
         )
 
         cbar = plt.colorbar(im)
-        cbar.set_label('$h_\mathrm{RF}$ [dB]', fontsize=LABEL_SIZE)
+        cbar.set_label('$SNR_u$ [dB]', fontsize=LABEL_SIZE)
         cbar.ax.tick_params(labelsize=TICK_SIZE)
 
         plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
@@ -245,7 +314,5 @@ if __name__ == "__main__":
         plt.tick_params(axis='both', labelsize=TICK_SIZE)
 
         plt.tight_layout()
-        plt.savefig("plots/D/hrf.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig("plots/B/snr_u_diff_b.pdf", format="pdf", bbox_inches="tight")
         plt.show()
-        
-        print("bitrates range from " + str(np.min(pn.Rb_d)) + " to " + str(np.max(pn.Rb_d)))

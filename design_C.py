@@ -1,5 +1,5 @@
 import numpy as np
-from enlight_iot.core.utils import generate_grid, diagonal_points, align_to 
+from pyenlight.core.utils import generate_grid, diagonal_points, align_to 
 
 
 def generate_focusing_normals(center, dims, resolution, const_axis, light_pos, target_pos):

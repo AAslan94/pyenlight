@@ -10,9 +10,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from enlight_iot import EnLightConfig, EnergyManager
-from enlight_iot.core.interface import PhyResultsDTO
-from enlight_iot.network import mac as mac_module
+from pyenlight import EnLightConfig, EnergyManager
+from pyenlight.core.interface import PhyResultsDTO
+from pyenlight.network import mac as mac_module
 from design_A1 import master_design_example
 plt.rcParams.update({
     "text.usetex": True,

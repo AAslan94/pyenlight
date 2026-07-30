@@ -23,11 +23,10 @@ The library is intended for cross-layer studies in which physical-layer propagat
 The principal workflow is:
 
 1. define a design dictionary;
-2. create a `PhyNet` object;
-3. compute PHY gains, noise, and communication metrics;
-4. export PHY metrics;
-5. create an `EnergyManager` (optionally run with the MAC option On);
-6. obtain per-node and aggregate results.
+2. create a `PhyNet` object to evaluate the PHY;
+3. export the required PHY telemetry;
+4. create an `EnergyManager`, optionally with MAC enabled;
+5. obtain per-node and aggregate results.
 
 ---
 
@@ -37,7 +36,11 @@ The Python package is imported as `pyenlight`.
 
 pyenlight is a simulation library. Scenarios are defined through Python design dictionaries containing the room geometry, optical surfaces, nodes, hardware parameters, communication settings, MAC configuration, and energy profile.
 
-The repository also contain generated results for the example experiments. These include detailed PHY matrices, compact PHY information to be used in the energy/MAC layers, experiment metadata, per-node CSV results, and figures. Such outputs should be interpreted together with the design dictionary, configuration, software revision, MAC seed set, number of seeds, simulation duration, and PHY/MAC thresholds used to generate them.
+The repository also contains generated results for the example experiments. These include detailed PHY matrices, compact PHY information to be used in the energy/MAC layers, experiment metadata, per-node CSV results, and figures. These outputs should be interpreted together with the design dictionary, configuration, software revision, MAC seeds, simulation duration, and PHY/MAC thresholds used to generate them.
+
+### Acknowledgment
+
+This work was funded by the European Union under the Marie Skłodowska-Curie Doctoral Network **OWIN6G: Optical Wireless Sensor Networks for 6G (Grant agreement ID: 101119624)**.
 
 ## Usage Instructions
 
@@ -59,7 +62,7 @@ simpy
 pandas
 ```
 
-A typical environment can be created with:
+Linux installation in a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -67,7 +70,17 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -e .
 ```
-It is highly recommended to use a virtual environment.
+Using a virtual / conda environment is strongly recommended.
+
+Windows installation in a virtual environment with PowerShell:
+
+```bash
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
 ---
 ### Main Simulation Workflow
 
@@ -101,7 +114,7 @@ energy = EnergyManager(
 results = energy.get_results_df()
 ```
 
-#### 4.1 Execution sequence inside `PhyNet`
+#### Execution sequence inside `PhyNet`
 
 The `PhyNet` constructor performs the following operations:
 
@@ -183,7 +196,7 @@ energy = EnergyManager(
 energy.save_csv("experiment_1_results.csv")
 ```
 
-It is recommended to start with a validated scenario file such as `design_A.py`, `design_B.py`, or `design_C.py`.
+It is recommended to start with a validated scenario file such as `design_A.py`.
 
 ---
 ### Output Organization
@@ -197,7 +210,7 @@ experiment_name_phy_telemetry.npz
 experiment_name_results.csv
 ```
 
-Recommended interpretation:
+File details:
 
 | File | Purpose |
 |---|---|
@@ -208,7 +221,6 @@ Recommended interpretation:
 
 The PHY matrices and energy results are separate artifacts. They may be stored in the same experiment directory, but they are not produced as one combined file.
 
----
 ---
 ## Requirements
 
@@ -248,7 +260,7 @@ pyenlight/
 └── __init__.py
 ```
 
-#### 2.1 `core`
+#### `core`
 
 The `core` package contains global configuration objects, shared utilities, and data-transfer structures.
 
@@ -256,14 +268,14 @@ The `core` package contains global configuration objects, shared utilities, and 
 - `interface.py`: `PhyResultsDTO`, which transfers PHY outputs to the energy and MAC layers.
 - `utils.py`: array conversion, geometry, probability, and helper functions.
 
-#### 2.2 `environment`
+#### `environment`
 
 The `environment` package constructs the room and evaluates propagation.
 
 - `geometry.py`: room surfaces, RISs, windows, blockers, and optical/RF element containers.
 - `channel.py`: LoS, diffuse, RIS, and RF channel-gain calculations.
 
-#### 2.3 `hardware`
+#### `hardware`
 
 The `hardware` package describes optical/electrical devices and sensor-node energy.
 
@@ -271,7 +283,7 @@ The `hardware` package describes optical/electrical devices and sensor-node ener
 - `devices.py`: TIA, IR driver, RF transmitter-current model, and PV receiver.
 - `energy.py`: cycle energy, MAC-aware state durations, harvesting, and battery lifetime.
 
-#### 2.4 `network`
+#### `network`
 
 The `network` package creates nodes, orchestrates PHY evaluation, and simulates medium access.
 
@@ -280,9 +292,9 @@ The `network` package creates nodes, orchestrates PHY evaluation, and simulates 
 - `mac.py`: slotted and unslotted CSMA/CA, ACKs, hidden nodes, BTMA, and aggregation.
 
 ---
-### Configuration System
+### Constants and Default Parameters
 
-Default parameters are stored in `EnLightConfig`, which contains six dataclasses:
+Default constants and fallback values are stored in `EnLightConfig`, which contains six dataclasses:
 
 ```python
 config.physics
@@ -293,9 +305,9 @@ config.comm
 config.devices
 ```
 
-Values provided in the design dictionary generally override these defaults.
+Values defined explicitly in the design dictionary generally override the corresponding defaults.
 
-## 5.1 Physical constants
+#### Physical constants
 
 `PhysicsConfig` includes:
 
@@ -306,13 +318,13 @@ Values provided in the design dictionary generally override these defaults.
 | `c0` | speed of light | `299792458.0` m/s |
 | `hP` | Planck constant | `6.62607015e-34` J s |
 | `T0` | reference temperature | `300.0` K |
-| `pd_peak` | spectral scaling term | `2e9` |
+| `pd_peak` | peak solar spectral irradiance | `2e9` W/m$^2$/m |
 | `T` | device temperature | `298` K |
 | `eo` | vacuum permittivity | `8.854e-12` F/m |
 
 It also defines the six Cartesian unit vectors `xp`, `xm`, `yp`, `ym`, `zp`, and `zm`.
 
-## 5.2 Spectral parameters
+#### Spectral parameters
 
 `SpectralConfig` defines the integration range and resolution:
 
@@ -323,7 +335,7 @@ It also defines the six Cartesian unit vectors `xp`, `xm`, `yp`, `ym`, `zp`, and
 | `grid_points` | wavelength samples | `1000` |
 | `t_sun` | solar black-body temperature | `5800` K |
 
-## 5.3 Environment parameters
+#### Environment parameters
 
 `EnvironmentConfig` provides geometry and optical defaults:
 
@@ -340,7 +352,7 @@ It also defines the six Cartesian unit vectors `xp`, `xm`, `yp`, `ym`, `zp`, and
 
 Increasing wall resolution or the number of diffuse bounces can substantially increase memory use and runtime.
 
-## 5.4 Hardware parameters
+#### Hardware parameters
 
 `HardwareConfig` contains MCU, receiver, and battery defaults:
 
@@ -360,7 +372,7 @@ Increasing wall resolution or the number of diffuse bounces can substantially in
 | `V_batt` | battery voltage | `3.6` V |
 | `mpp_eff` | MPP conversion efficiency | `0.8` |
 
-## 5.5 Communication parameters
+#### Communication parameters
 
 `CommConfig` contains default Tx powers, data sizes, rates, and cycle timings:
 
@@ -382,7 +394,7 @@ Increasing wall resolution or the number of diffuse bounces can substantially in
 | `harvesting_hours` | daily harvesting interval | `5.0` h |
 | `n_sp` | ON/OFF keying spectral efficiency | `0.4` |
 
-## 5.6 Device dictionaries
+#### Device dictionaries
 
 `DeviceConfig` stores parameter dictionaries for:
 
@@ -391,8 +403,6 @@ Increasing wall resolution or the number of diffuse bounces can substantially in
 - the PV equivalent circuit;
 - the IR driver;
 - the RF transmitter-current model.
-
-These dictionaries may be replaced or extended in a custom `EnLightConfig`.
 
 ---
 ### Design Dictionary
@@ -413,7 +423,7 @@ design = {
 
 Not every section is required. Missing values are generally taken from `EnLightConfig`.
 
-## 6.1 Environment definition
+#### Environment definition
 
 A representative structure is:
 
@@ -449,8 +459,13 @@ design["environment"] = {
         },
     ],
     "blockers": {
-        # blocker arrays or values used by ChannelEngine
-    },
+        "positions": [
+            [4,1,0],
+            [3.5,3.5,0]
+            ],
+         "radius": 0.3,       
+         "height":1.7    
+        } ,
 }
 ```
 
@@ -464,7 +479,7 @@ design["environment"] = {
 
 Surface points are placed at patch centers. The patch area is computed from the two surface dimensions and their respective resolutions.
 
-## 6.2 Node definitions
+#### Node definitions
 
 The `nodes` section may contain:
 
@@ -496,7 +511,7 @@ The node definitions include, depending on node type:
 
 Use arrays of shape `(N, 3)` for positions and orientation vectors. Per-node scalar parameters should have length `N` or be provided as a single scalar if they are the same for all nodes.
 
-## 6.3 Receiver and uplink-type flags
+#### Receiver and uplink-type flags
 
 The current implementation uses numerical flags:
 
@@ -513,7 +528,7 @@ Mixed sensor populations are supported through per-node arrays.
 ---
 ### Geometry Model
 
-## 7.1 Element containers
+#### Element containers
 
 The geometry layer uses vectorized element classes:
 
@@ -534,7 +549,7 @@ Optical receivers additionally contain area, field of view, reflectivity, and re
 
 The `Elements.merge()` method combines multiple compatible batches using vertical stacking.
 
-## 7.2 Room construction
+#### Room construction
 
 `RoomBuilder` reads dimensions, resolution, reflectivity, special surfaces, and blockers. `Room` then generates:
 
@@ -549,11 +564,11 @@ The `Elements.merge()` method combines multiple compatible batches using vertica
 
 The room boundary surfaces are discretized into patches. These patches act as intermediate transmitters and receivers for diffuse propagation.
 
-## 7.3 Special-surface overlap
+#### Special-surface overlap
 
 When a window or RIS is added to a wall, overlapping wall patches are handled by the room-building logic. This prevents the original wall and the inserted special surface from occupying the same effective area.
 
-## 7.4 Human blockers
+#### Human blockers
 
 Blockers are passed from the design dictionary to `ChannelEngine`. The implemented model treats blockers as finite vertical bodies and determines whether a Tx–Rx segment intersects them.
 
@@ -571,7 +586,7 @@ ris_gains(tx, rx)
 rf_gains(tx, rx)
 ```
 
-## 8.1 LoS optical gain
+#### LoS optical gain
 
 The LoS calculation uses a Lambertian emission model. It considers:
 
@@ -585,7 +600,7 @@ The LoS calculation uses a Lambertian emission model. It considers:
 
 Inputs and outputs are vectorized. The resulting matrix contains one gain for each Tx–Rx pair.
 
-## 8.2 Diffuse optical gain
+#### Diffuse optical gain
 
 Diffuse gain is evaluated through the discretized room surfaces. The configured number of reflections is controlled by:
 
@@ -595,7 +610,7 @@ config.env.bounces
 
 Higher reflection orders increase complexity. For dense wall grids, the intermediate channel matrices can become the dominant memory cost.
 
-## 8.3 RIS gain
+#### RIS gain
 
 RIS gain is computed as a two-hop optical path through the RIS elements:
 
@@ -605,7 +620,7 @@ Tx -> RIS element -> Rx
 
 The RIS geometry, element normals, reflectivity, and element area determine the contribution. The result is added to the LoS and diffuse components.
 
-## 8.4 RF gain
+#### RF gain
 
 The RF uplink uses a configurable indoor path-loss model. Its default parameter dictionary includes:
 
@@ -630,7 +645,7 @@ RF gain is represented in the units expected by the RF power-budget calculations
 It provides models for:
 
 - a white LED;
-- a TSFF5210-like IR emitter;
+- a TSFF5210-based IR emitter;
 - sunlight;
 - photodiode responsivity;
 - solar-panel sensitivity;
@@ -661,7 +676,7 @@ The wavelength interval and number of samples are controlled by `SpectralConfig`
 ---
 ### Node Managers
 
-## 10.1 `NodeBuilder`
+#### `NodeBuilder`
 
 `NodeBuilder` extracts a node group from the design dictionary and normalizes its values. It performs:
 
@@ -686,7 +701,7 @@ masters
 ambient_nodes
 ```
 
-## 10.2 `SNManager`
+#### `SNManager`
 
 `SNManager` creates sensor-node optical and RF element groups and determines:
 
@@ -700,22 +715,22 @@ ambient_nodes
 
 It supports mixed IR/RF uplinks and mixed PD/PV receivers.
 
-## 10.3 `MNManager`
+#### `MNManager`
 
 `MNManager` creates master-node optical Tx and Rx structures. It provides the VLC downlink source, IR uplink receiver, and RF receiver parameters.
 
-## 10.4 `ANManager`
+#### `ANManager`
 
 `ANManager` represents artificial ambient optical sources. Ambient nodes contribute noise and, depending on receiver type, may also contribute harvestable optical power.
 
 ---
 ### Physical-Layer Orchestration
 
-## 11.1 `oPhyGains`
+#### `oPhyGains`
 
 `oPhyGains` is the gain and received-current engine used by `PhyNet`. It calculates:
 
-#### Downlink
+##### Downlink
 
 ```text
 master optical Tx -> sensor optical Rx
@@ -729,7 +744,7 @@ Components:
 - received optical powers;
 - received electrical currents.
 
-#### IR uplink
+##### IR uplink
 
 ```text
 sensor IR Tx -> master optical Rx
@@ -743,22 +758,22 @@ Components:
 - received optical powers;
 - received electrical currents.
 
-#### Sensor-to-sensor optical links
+##### Sensor-to-sensor optical links
 
 When BTMA is disabled, sensor-to-sensor gains are calculated for CCA and hidden-node detection.
 
-#### RF uplink
+##### RF uplink
 
 For RF sensors, the engine calculates:
 
 - sensor-to-master RF gain;
 - sensor-to-sensor RF gain.
 
-#### Ambient illumination
+##### Ambient illumination
 
 Artificial sources and windows are evaluated for both sensor and master receivers. The resulting currents are used in shot-noise and PV calculations.
 
-## 11.2 `PhyNet`
+#### `PhyNet`
 
 `PhyNet` is the main PHY API:
 
@@ -776,11 +791,11 @@ Parameters:
 | Argument | Meaning |
 |---|---|
 | `design` | complete scenario dictionary |
-| `budget_run` | determine required Tx power when true |
+| `budget_run` | determine required Tx power and orientation (towards CN) when true |
 | `config` | optional `EnLightConfig` |
 | `btma_mode` | enable BTMA assumptions and omit optical sensor-to-sensor CCA gains |
 
-#### Power-budget mode
+##### Power-budget mode
 
 When `budget_run=True`, `PhyNet` may modify Tx powers:
 
@@ -790,14 +805,14 @@ When `budget_run=True`, `PhyNet` may modify Tx powers:
 
 The default optical target BER used by `set_tx_power()` is `3.8e-3`.
 
-#### Multiple masters
+##### Multiple masters
 
 The current alignment method only supports a single master. When multiple masters are present, automatic IR orientation is not implemented.
 
 ---
 ### Receiver Noise and Communication Metrics
 
-## 12.1 Downlink bandwidth
+#### Downlink bandwidth
 
 The downlink receiver bandwidth is calculated from:
 
@@ -805,15 +820,16 @@ The downlink receiver bandwidth is calculated from:
 BW_d = Rb_d / n_sp_d
 ```
 
-## 12.2 Uplink bandwidth
+#### Uplink bandwidth
 
 For IR uplinks:
 
 ```text
 BW_u = Rb_up_ir / n_sp_u
 ```
+where $R_b$ is the data rate and $n_{sp}$ is the modulation spectral-efficiency factor, set to 0.4 for OOK.
 
-## 12.3 PD receiver noise
+#### PD receiver noise
 
 PD receivers include:
 
@@ -823,7 +839,7 @@ PD receivers include:
 
 The TIA is evaluated by `TIA.calc_noise_power()`.
 
-## 12.4 PV receiver model
+#### PV receiver model
 
 PV receivers use the `PV` class and a five-parameter equivalent-circuit representation. The model includes:
 
@@ -836,9 +852,9 @@ PV receivers use the `PV` class and a five-parameter equivalent-circuit represen
 - shot noise;
 - signal voltage.
 
-The PV receiver bandwidth may limit the usable downlink rate. PV parameters are taken from `config.devices.pv_circuit` and may be overridden by `design["PV_circuit"]`.
+The PV receiver bandwidth limits the usable downlink rate. PV parameters are taken from `config.devices.pv_circuit` and may be overridden by `design["PV_circuit"]`.
 
-## 12.5 SNR components
+#### SNR components
 
 `PhyNet.compute_metrics()` derives total and component metrics, including:
 
@@ -852,7 +868,7 @@ The PV receiver bandwidth may limit the usable downlink rate. PV parameters are 
 
 The implementation uses chunked processing for selected calculations to reduce peak memory use.
 
-## 12.6 BER relation
+#### BER relation
 
 The library utilities use the Gaussian Q-function and inverse Q-function. For OOK-style evaluation, the required SNR is obtained through the target Q-function argument, and the optical Tx-power budget is computed accordingly.
 
@@ -929,9 +945,9 @@ It supports:
 - per-node state times;
 - multiple independent seeds.
 
-## 14.1 Main entry points
+#### Main entry points
 
-#### Single simulation
+##### Single simulation
 
 ```python
 stats, params = run_sim(
@@ -954,7 +970,7 @@ stats, params = run_sim(
 )
 ```
 
-#### Multiple seeds
+##### Multiple seeds
 
 ```python
 mean, std, all_runs, per_node, params = call_MAC(
@@ -978,7 +994,7 @@ mean, std, all_runs, per_node, params = call_MAC(
 )
 ```
 
-#### Node-count sweep
+##### Node-count sweep
 
 ```python
 sweep = run_sweep(
@@ -997,7 +1013,7 @@ sweep = run_sweep(
 )
 ```
 
-## 14.2 `MAC_Params`
+#### `MAC_Params`
 
 `MAC_Params` stores MAC timing and frame parameters. Its methods calculate:
 
@@ -1012,15 +1028,15 @@ sweep = run_sweep(
 
 The CSMA/CA limits, backoff exponents, and timing constants should be verified in `MAC_Params` for the selected standard and PHY.
 
-## 14.3 Slotted mode
+#### Slotted mode
 
 `SlotClock` implements a shared slot boundary. Nodes align their backoff and CCA operations to this clock.
 
-## 14.4 Unslotted mode
+#### Unslotted mode
 
 In unslotted mode, backoff intervals are evaluated directly in simulation time without waiting for common slot boundaries.
 
-## 14.5 Channel model
+#### Channel model
 
 `VLC_Channel` represents the shared broadcast medium.
 
@@ -1041,7 +1057,7 @@ The channel tracks:
 - active MAC service intervals;
 - BTMA visibility.
 
-## 14.6 Physical-link failures
+#### Physical-link failures
 
 The MAC simulation distinguishes:
 
@@ -1050,17 +1066,13 @@ The MAC simulation distinguishes:
 3. downlink/ACK PHY losses;
 4. channel-access failures.
 
-`phy_pdr_up` and `phy_pdr_down` may be binary or probabilistic arrays, depending on how the caller prepares them.
-
-In the current energy-layer integration, PHY SNR values are thresholded to binary link availability.
-
-## 14.7 BTMA
+#### BTMA
 
 With BTMA enabled, the busy tone informs nodes about activity at the access point even when they cannot directly detect another sensor's IR transmission.
 
 `bt_hidden_mask` identifies nodes that cannot detect the busy tone. Such nodes can remain hidden despite BTMA.
 
-## 14.8 Node statistics
+#### Node statistics
 
 `NodeStats` records generated, delivered, and failed packets and accumulates timing and delay metrics.
 
@@ -1099,7 +1111,7 @@ energy = EnergyManager(
 )
 ```
 
-## 15.1 Cycle phases
+#### Cycle phases
 
 The modeled cycle contains:
 
@@ -1123,7 +1135,7 @@ t_rx         = L_dw / Rb_down
 
 When MAC is enabled, Tx, CCA, Rx, wait, and related durations are replaced by per-node MAC results.
 
-## 15.2 Receiver current
+#### Receiver current
 
 The receiver-current model distinguishes PD and PV nodes:
 
@@ -1134,13 +1146,13 @@ PV Rx: MCU + ADC
 
 This prevents TIA current from being assigned to a PV receiver.
 
-## 15.3 Tx current
+#### Tx current
 
 For IR sensors, the Tx current combines MCU current and the IR-driver current derived from optical Tx power.
 
 For RF sensors, `RF_calc_I()` converts RF Tx power to current using the configured RF-driver model.
 
-## 15.4 Cycle energy
+#### Cycle energy
 
 Active energy is integrated as:
 
@@ -1160,7 +1172,7 @@ Total cycle energy is:
 E_cycle = E_active + E_sleep
 ```
 
-## 15.5 Daily energy
+#### Daily energy
 
 Daily consumption is obtained from cycle energy and the configured cycle period. The manager stores:
 
@@ -1170,7 +1182,7 @@ E_day_harvested
 E_day_net
 ```
 
-## 15.6 Harvesting
+#### Harvesting
 
 PV harvesting uses the active PV operating voltage and current exported by `PhyNet`, together with:
 
@@ -1180,7 +1192,7 @@ PV harvesting uses the active PV operating voltage and current exported by `PhyN
 
 Non-PV nodes receive zero harvested energy.
 
-## 15.7 Battery lifetime
+#### Battery lifetime
 
 Initial stored battery energy is derived from:
 
@@ -1190,7 +1202,7 @@ capacity [mAh] × battery voltage × 3.6 × initial SoC
 
 Battery lifetime depends on daily net energy. A node with non-negative net daily energy does not receive a finite depletion time in the idealized model. In practice, self-discharge, conversion losses, aging, and finite charge capacity should be added for long-term battery-state studies.
 
-## 15.8 Results
+#### Results
 
 Retrieve a per-node Pandas table using:
 
@@ -1224,8 +1236,8 @@ Practical methods to reduce runtime include:
 - use coarse wall grids during debugging;
 - reduce diffuse bounces during model verification;
 - disable RIS and windows when not required;
-- enable BTMA to avoid optical sensor-to-sensor gain calculation when consistent with the study;
-- cache PHY telemetry;
+- enable BTMA to avoid optical sensor-to-sensor gain calculation when consistent with the corresponding paper;
+- cache PHY results for repeated MAC runs or optimization problems with a static channel;
 - run MAC seeds in parallel;
 - separate budget runs from large parameter sweeps.
 
@@ -1235,13 +1247,13 @@ A full PHY calculation should not be repeated for every MAC seed when geometry a
 ### Known Limitations and Implementation Notes
 
 1. **Single-master alignment**  
-   Automatic optical-uplink alignment (if selected with 'budget_run' = True) is implemented only for one master node.
+   Automatic optical-uplink alignment with `budget_run=True` is implemented only for one master node.
 
 2. **Binary PHY availability in energy-layer MAC integration**  
    The current energy workflow thresholds SNR to produce binary PHY success values. A smooth BER-to-PDR mapping would provide a more physical transition.
 
 3. **Configuration schema is not formally validated**  
-   The design dictionary relies on runtime parsing and array-shape checks. A typed schema would improve error reporting.
+   The design dictionary relies on runtime parsing and array-shape checks.
 
 4. **Idealized battery model**  
    Battery aging, self-discharge, maximum charge state, and nonlinear discharge behavior are not modeled.
@@ -1252,646 +1264,27 @@ A full PHY calculation should not be repeated for every MAC seed when geometry a
 6. **Mixed-network testing**  
     Mixed IR/RF and PD/PV populations are supported structurally, but every combination should be validated independently before publication-scale sweeps.
 
+## Synopsis
 
----
+A simulation is performed in four stages:
 
-### The `pd_peak` field
+1. the design dictionary defines the room, nodes, optical surfaces, blockers, hardware, communication parameters, and energy profile;
+2. `PhyNet` constructs the scenario and evaluates LoS, diffuse, RIS, RF, ambient-light, receiver-noise, SNR, and PHY-link quantities;
+3. `PhyResultsDTO` transfers the required PHY outputs to the MAC and energy layers;
+4. `EnergyManager` calculates cycle and daily energy, PV harvesting, battery lifetime, and, when `MAC=True`, runs the MAC simulator and replaces nominal communication durations with simulated per-node state times.
 
-`PhysicsConfig` defines:
+The main models are summarized as follows:
 
-```python
-pd_peak: float = 2e9
-```
+- optical LoS gain follows the Lambertian model with receiver FOV and blockage;
+- diffuse gain is evaluated over discretized room surfaces;
+- RIS gain is calculated over Tx--RIS--Rx paths;
+- RF propagation follows the configured indoor path-loss model;
+- spectral overlap combines the source spectrum, detector response, and optical-filter transmission;
+- PD receivers include TIA and shot noise;
+- PV receivers include the DC operating point, small-signal response, bandwidth, noise, and harvesting output;
+- the MAC model includes CCA, backoff, collisions, retransmissions, hidden nodes, PHY failures, ACK failures, and BTMA;
+- the energy model integrates the current and duration of initialization, sensing, processing, CCA, Tx, waiting, Rx, and sleep states.
 
-This parameter represents the **peak spectral irradiance used to scale the normalized solar spectrum**. The solar spectrum is generated from a black-body model and normalized by its maximum value. Multiplication by `pd_peak` restores the intended absolute spectral scale:
 
-```text
-S_sun(lambda) = pd_peak * B(lambda, T_sun) / max[B(lambda, T_sun)]
-```
-
-where `B(lambda, T_sun)` is the black-body spectral distribution at the configured solar temperature.
-
-Accordingly:
-
-- `pd_peak` is associated with the solar spectrum, not the photodiode;
-- its value is `2e9` in the current configuration;
-- it scales the normalized solar spectrum to an absolute spectral-irradiance level;
-- a clearer name would be `sun_spectral_peak`.
-
-The parameter name is retained for backward compatibility, although `sun_spectral_peak` would better describe its physical role.
-
-## Methodology
-
-The simulation methodology is described in detail in the code sections above. In summary, a scenario is defined through the design dictionary, evaluated by `PhyNet`, exported through `PhyResultsDTO`, and passed to `EnergyManager`. When `MAC=True`, the MAC simulator is executed internally and its per-node state durations are used in the energy calculation.
-
-The following detailed sections from the previous documentation are retained because they describe the implemented modeling methodology rather than only the software interface:
-
-### Geometry Model
-
-## 7.1 Element containers
-
-The geometry layer uses vectorized element classes:
-
-- `Elements`;
-- `OpticalRxElements`;
-- `OpticalTxElements`;
-- `RFTxElements`.
-
-Each object represents a batch of elements rather than a single device. The central fields are:
-
-```text
-r : element positions, shape (N, 3)
-n : orientation vectors, shape (N, 3)
-N : number of elements
-```
-
-Optical receivers additionally contain area, field of view, reflectivity, and receiver type. Optical transmitters contain power and Lambertian order.
-
-The `Elements.merge()` method combines multiple compatible batches using vertical stacking.
-
-## 7.2 Room construction
-
-`RoomBuilder` reads dimensions, resolution, reflectivity, special surfaces, and blockers. `Room` then generates:
-
-- floor;
-- ceiling;
-- west wall;
-- east wall;
-- south wall;
-- north wall;
-- optional windows;
-- optional RIS surfaces.
-
-The room boundary surfaces are discretized into patches. These patches act as intermediate transmitters and receivers for diffuse propagation.
-
-## 7.3 Special-surface overlap
-
-When a window or RIS is added to a wall, overlapping wall patches are handled by the room-building logic. This prevents the original wall and the inserted special surface from occupying the same effective area.
-
-## 7.4 Human blockers
-
-Blockers are passed from the design dictionary to `ChannelEngine`. The implemented model treats blockers as finite vertical bodies and determines whether a Tx–Rx segment intersects them.
-
-Blockage is applied in the LoS channel calculation. Consequently, a blocked direct link may still retain diffuse or RIS-assisted power unless these paths are also geometrically excluded.
-
----
-### Optical and RF Channel Models
-
-`ChannelEngine` provides four principal methods:
-
-```python
-los_gains(tx, rx)
-diffuse_gains(tx, rx, bounces)
-ris_gains(tx, rx)
-rf_gains(tx, rx)
-```
-
-## 8.1 LoS optical gain
-
-The LoS calculation uses a Lambertian emission model. It considers:
-
-- Tx–Rx distance;
-- Tx irradiance angle;
-- Rx incidence angle;
-- Tx Lambertian order;
-- receiver area;
-- receiver field of view;
-- blockage.
-
-Inputs and outputs are vectorized. The resulting matrix contains one gain for each Tx–Rx pair.
-
-## 8.2 Diffuse optical gain
-
-Diffuse gain is evaluated through the discretized room surfaces. The configured number of reflections is controlled by:
-
-```python
-config.env.bounces
-```
-
-Higher reflection orders increase complexity. For dense wall grids, the intermediate channel matrices can become the dominant memory cost.
-
-## 8.3 RIS gain
-
-RIS gain is computed as a two-hop optical path through the RIS elements:
-
-```text
-Tx -> RIS element -> Rx
-```
-
-The RIS geometry, element normals, reflectivity, and element area determine the contribution. The result is added to the LoS and diffuse components.
-
-## 8.4 RF gain
-
-The RF uplink uses a configurable indoor path-loss model. Its default parameter dictionary includes:
-
-```python
-{
-    "n": 1.46,
-    "pl_ref": 34.62,
-    "k": 2.03,
-    "f": 2.45,
-    "sigma": 3.76,
-    "sigma_factor": 2,
-}
-```
-
-RF gain is represented in the units expected by the RF power-budget calculations, including dB-domain operations in `PhyNet`.
-
----
-### Spectral Model
-
-`SpectralPhysics` calculates effective source–detector responsivity from spectral overlap.
-
-It provides models for:
-
-- a white LED;
-- a TSFF5210-like IR emitter;
-- sunlight;
-- photodiode responsivity;
-- solar-panel sensitivity;
-- optical filters.
-
-The effective responsivity is obtained by integrating the product of:
-
-```text
-source spectrum × detector response × filter transmission
-```
-
-This permits the same geometric optical power to produce different electrical currents for different sources, filters, and detectors.
-
-Primary methods include:
-
-```python
-white_led_spectrum(wl)
-tsff5210_spectrum(wl)
-sun_spectrum(wl)
-photodiode_responsivity(wl)
-solar_panel_sensitivity(wl)
-calculate_effective_responsivity(...)
-get_responsivity_by_name(...)
-```
-
-The wavelength interval and number of samples are controlled by `SpectralConfig`.
-
----
-### Physical-Layer Orchestration
-
-## 11.1 `oPhyGains`
-
-`oPhyGains` is the gain and received-current engine used by `PhyNet`. It calculates:
-
-#### Downlink
-
-```text
-master optical Tx -> sensor optical Rx
-```
-
-Components:
-
-- `h_d_los`;
-- `h_d_diff`;
-- `h_d_ris`;
-- received optical powers;
-- received electrical currents.
-
-#### IR uplink
-
-```text
-sensor IR Tx -> master optical Rx
-```
-
-Components:
-
-- `h_u_los`;
-- `h_u_diff`;
-- `h_u_ris`;
-- received optical powers;
-- received electrical currents.
-
-#### Sensor-to-sensor optical links
-
-When BTMA is disabled, sensor-to-sensor gains are calculated for CCA and hidden-node detection.
-
-#### RF uplink
-
-For RF sensors, the engine calculates:
-
-- sensor-to-master RF gain;
-- sensor-to-sensor RF gain.
-
-#### Ambient illumination
-
-Artificial sources and windows are evaluated for both sensor and master receivers. The resulting currents are used in shot-noise and PV calculations.
-
-## 11.2 `PhyNet`
-
-`PhyNet` is the main PHY API:
-
-```python
-phy = PhyNet(
-    design,
-    budget_run=False,
-    config=config,
-    btma_mode=True,
-)
-```
-
-Parameters:
-
-| Argument | Meaning |
-|---|---|
-| `design` | complete scenario dictionary |
-| `budget_run` | determine required Tx power when true |
-| `config` | optional `EnLightConfig` |
-| `btma_mode` | enable BTMA assumptions and omit optical sensor-to-sensor CCA gains |
-
-#### Power-budget mode
-
-When `budget_run=True`, `PhyNet` may modify Tx powers:
-
-- IR nodes are aligned toward the master when a single master exists;
-- minimum IR optical Tx power is estimated from a target BER;
-- minimum RF Tx power is estimated from receiver sensitivity.
-
-The default optical target BER used by `set_tx_power()` is `3.8e-3`.
-
-#### Multiple masters
-
-The current alignment method only supports a single master. When multiple masters are present, automatic IR orientation is not implemented.
-
----
-### Receiver Noise and Communication Metrics
-
-## 12.1 Downlink bandwidth
-
-The downlink receiver bandwidth is calculated from:
-
-```text
-BW_d = Rb_d / n_sp_d
-```
-
-## 12.2 Uplink bandwidth
-
-For IR uplinks:
-
-```text
-BW_u = Rb_up_ir / n_sp_u
-```
-
-## 12.3 PD receiver noise
-
-PD receivers include:
-
-- TIA noise;
-- shot noise from sunlight;
-- shot noise from artificial ambient sources.
-
-The TIA is evaluated by `TIA.calc_noise_power()`.
-
-## 12.4 PV receiver model
-
-PV receivers use the `PV` class and a five-parameter equivalent-circuit representation. The model includes:
-
-- DC operating point;
-- photocurrent;
-- series and shunt resistance;
-- junction and diffusion capacitance;
-- frequency-dependent transfer function;
-- thermal noise;
-- shot noise;
-- signal voltage.
-
-The PV receiver bandwidth may limit the usable downlink rate. PV parameters are taken from `config.devices.pv_circuit` and may be overridden by `design["PV_circuit"]`.
-
-## 12.5 SNR components
-
-`PhyNet.compute_metrics()` derives total and component metrics, including:
-
-- total downlink SNR;
-- LoS-only downlink SNR;
-- diffuse-only downlink SNR;
-- RIS-only downlink SNR;
-- IR uplink SNR;
-- sensor-to-sensor SNR;
-- RF link metrics.
-
-The implementation uses chunked processing for selected calculations to reduce peak memory use.
-
-## 12.6 BER relation
-
-The library utilities use the Gaussian Q-function and inverse Q-function. For OOK-style evaluation, the required SNR is obtained through the target Q-function argument, and the optical Tx-power budget is computed accordingly.
-
----
-### MAC Simulator
-
-The MAC simulator is implemented in `network/mac.py` using SimPy.
-
-It supports:
-
-- slotted CSMA/CA;
-- unslotted CSMA/CA;
-- periodic and stochastic packet generation;
-- random initial node offsets;
-- finite backoff and retransmission limits;
-- CCA;
-- Tx and ACK durations;
-- ACK success/failure;
-- collisions;
-- hidden nodes;
-- BTMA;
-- physical uplink failure;
-- physical downlink/ACK failure;
-- per-node state times;
-- multiple independent seeds.
-
-## 14.1 Main entry points
-
-#### Single simulation
-
-```python
-stats, params = run_sim(
-    n_nodes=20,
-    mean_iat_us=60e6,
-    mode="unslotted",
-    traffic_type="periodic",
-    seed=1,
-    sim_time_us=3000e6,
-    data_rate_bps=10e3,
-    symbol_rate_sym_s=10e3,
-    payload_bytes=128,
-    ack_bytes=16,
-    hidden_node_mask=None,
-    phy_pdr_up=None,
-    phy_pdr_down=None,
-    bt_hidden_mask=None,
-    btma_mode=True,
-    debug=False,
-)
-```
-
-#### Multiple seeds
-
-```python
-mean, std, all_runs, per_node, params = call_MAC(
-    nodes=20,
-    period=60e6,
-    mode="unslotted",
-    traffic_type="periodic",
-    n_seeds=150,
-    sim_time_us=3000e6,
-    data_rate_bps=10e3,
-    symbol_rate_sym_s=10e3,
-    payload_bytes=128,
-    ack_bytes=16,
-    hidden_node_mask=hidden_mask,
-    bt_hidden_mask=bt_hidden_mask,
-    btma_mode=True,
-    phy_pdr_up=phy_pdr_up,
-    phy_pdr_down=phy_pdr_down,
-    log=True,
-    debug=False,
-)
-```
-
-#### Node-count sweep
-
-```python
-sweep = run_sweep(
-    node_sweep=[20, 40, 60, 80, 100],
-    mode="unslotted",
-    n_seeds=150,
-    base_seed=1,
-    mean_iat_us=60e6,
-    traffic_type="periodic",
-    sim_time_us=3000e6,
-    data_rate_bps=10e3,
-    symbol_rate_sym_s=10e3,
-    payload_bytes=128,
-    ack_bytes=16,
-    btma_mode=True,
-)
-```
-
-## 14.2 `MAC_Params`
-
-`MAC_Params` stores MAC timing and frame parameters. Its methods calculate:
-
-- symbol duration;
-- unit-backoff duration;
-- CCA duration;
-- SIFS duration;
-- turnaround duration;
-- complete frame length;
-- frame duration;
-- ACK duration.
-
-The CSMA/CA limits, backoff exponents, and timing constants should be verified in `MAC_Params` for the selected standard and PHY.
-
-## 14.3 Slotted mode
-
-`SlotClock` implements a shared slot boundary. Nodes align their backoff and CCA operations to this clock.
-
-## 14.4 Unslotted mode
-
-In unslotted mode, backoff intervals are evaluated directly in simulation time without waiting for common slot boundaries.
-
-## 14.5 Channel model
-
-`VLC_Channel` represents the shared broadcast medium.
-
-A hidden-node matrix follows:
-
-```text
-hidden_node_mask[tx, rx] = True
-```
-
-meaning that `rx` cannot hear `tx`.
-
-The channel tracks:
-
-- concurrent transmissions;
-- whether nodes can sense one another;
-- whether the AP can receive an uplink;
-- collision status;
-- active MAC service intervals;
-- BTMA visibility.
-
-## 14.6 Physical-link failures
-
-The MAC simulation distinguishes:
-
-1. collision losses;
-2. uplink PHY losses;
-3. downlink/ACK PHY losses;
-4. channel-access failures.
-
-`phy_pdr_up` and `phy_pdr_down` may be binary or probabilistic arrays, depending on how the caller prepares them.
-
-In the current energy-layer integration, PHY SNR values are thresholded to binary link availability.
-
-## 14.7 BTMA
-
-With BTMA enabled, the busy tone informs nodes about activity at the access point even when they cannot directly detect another sensor's IR transmission.
-
-`bt_hidden_mask` identifies nodes that cannot detect the busy tone. Such nodes can remain hidden despite BTMA.
-
-## 14.8 Node statistics
-
-`NodeStats` records generated, delivered, and failed packets and accumulates timing and delay metrics.
-
-The aggregation functions provide:
-
-- packet delivery ratio;
-- AP-received delivery ratio;
-- collision counts;
-- PHY uplink losses;
-- PHY downlink/ACK losses;
-- channel-access failures;
-- retransmissions;
-- CCA attempts;
-- backoff slots;
-- Tx attempts;
-- mean delay;
-- 99th-percentile delay;
-- per-state times;
-- channel and MAC active-time metrics.
-
-Use `per_node_aggregate()` when energy consumption must be mapped back to individual sensors.
-
----
-### Energy Model
-
-`EnergyManager` combines PHY telemetry, hardware parameters, cycle tasks, and optional MAC output.
-
-```python
-energy = EnergyManager(
-    phy_data=telemetry,
-    design=design,
-    config=config,
-    MAC=True,
-    btma_mode=True,
-    MAC_mode="unslotted",
-)
-```
-
-## 15.1 Cycle phases
-
-The modeled cycle contains:
-
-1. initialization;
-2. sensing;
-3. processing;
-4. uplink Tx;
-5. CCA;
-6. turnaround/wait;
-7. downlink Rx;
-8. sleep.
-
-Baseline durations are:
-
-```text
-t_sensing   = N_s_up / f_s
-t_processing = N_c_up / f_mcu
-t_tx         = L_up / Rb_up
-t_rx         = L_dw / Rb_down
-```
-
-When MAC is enabled, Tx, CCA, Rx, wait, and related durations are replaced by per-node MAC results.
-
-## 15.2 Receiver current
-
-The receiver-current model distinguishes PD and PV nodes:
-
-```text
-PD Rx: MCU + ADC + TIA
-PV Rx: MCU + ADC
-```
-
-This prevents TIA current from being assigned to a PV receiver.
-
-## 15.3 Tx current
-
-For IR sensors, the Tx current combines MCU current and the IR-driver current derived from optical Tx power.
-
-For RF sensors, `RF_calc_I()` converts RF Tx power to current using the configured RF-driver model.
-
-## 15.4 Cycle energy
-
-Active energy is integrated as:
-
-```text
-E_active = V × sum(I_state × t_state)
-```
-
-Sleep energy is:
-
-```text
-E_sleep = V × I_sleep × max(0, T_cycle - t_active)
-```
-
-Total cycle energy is:
-
-```text
-E_cycle = E_active + E_sleep
-```
-
-## 15.5 Daily energy
-
-Daily consumption is obtained from cycle energy and the configured cycle period. The manager stores:
-
-```text
-E_day_consumed
-E_day_harvested
-E_day_net
-```
-
-## 15.6 Harvesting
-
-PV harvesting uses the active PV operating voltage and current exported by `PhyNet`, together with:
-
-- harvesting hours;
-- MPP efficiency;
-- PV-node mask.
-
-Non-PV nodes receive zero harvested energy.
-
-## 15.7 Battery lifetime
-
-Initial stored battery energy is derived from:
-
-```text
-capacity [mAh] × battery voltage × 3.6 × initial SoC
-```
-
-Battery lifetime depends on daily net energy. A node with non-negative net daily energy does not receive a finite depletion time in the idealized model. In practice, self-discharge, conversion losses, aging, and finite charge capacity should be added for long-term battery-state studies.
-
-## 15.8 Results
-
-Retrieve a per-node Pandas table using:
-
-```python
-df = energy.get_results_df()
-```
-
-Save it using:
-
-```python
-energy.save_csv("energy_results.csv")
-```
-
-The output contains node-level communication, energy, harvesting, and battery metrics. When MAC is enabled, MAC statistics are included where available.
-
----
-
-## License and Contribution Guidelines
-
-No license file is currently included in this beta repository. A license should be added before public redistribution or reuse by third parties.
-
-Contributions should:
-
-- preserve backward compatibility where practical;
-- include a clear description of the change;
-- update the documentation when public behavior or design parameters change;
-- include or update an example when appropriate;
-- verify that existing scenarios still execute successfully;
-- avoid committing caches, local environments, or generated outputs unless they are intentionally included as reproducibility artifacts.
+## License
+`pyenlight` is released as open-source software under the MIT License. This repository will accompany the submission of the corresponding paper, and the formal citation will be added upon publication. 

@@ -12,7 +12,7 @@
 - human-body blockage;
 - photodiode (PD) and photovoltaic (PV) optical receivers;
 - physical-layer SNR and BER evaluation;
-- IEEE 802.15.4/802.15.7-inspired CSMA/CA simulation;
+- IEEE 802.15.4/802.15.7-based CSMA/CA simulation;
 - optional busy-tone multiple access (BTMA);
 - hidden-node and physical-link failures;
 - device-level energy consumption;
@@ -25,10 +25,9 @@ The principal workflow is:
 1. define a design dictionary;
 2. create a `PhyNet` object;
 3. compute PHY gains, noise, and communication metrics;
-4. export PHY telemetry;
-5. create an `EnergyManager`;
-6. optionally run the MAC simulator;
-7. obtain per-node and aggregate results.
+4. export PHY metrics;
+5. create an `EnergyManager` (optionally run with the MAC option On);
+6. obtain per-node and aggregate results.
 
 ---
 
@@ -36,7 +35,7 @@ The Python package is imported as `pyenlight`.
 
 ## General Information
 
-pyenlight is primarily a simulation library and does not require a standalone input dataset. Scenarios are defined through Python design dictionaries containing the room geometry, optical surfaces, nodes, hardware parameters, communication settings, MAC configuration, and energy profile.
+pyenlight is a simulation library. Scenarios are defined through Python design dictionaries containing the room geometry, optical surfaces, nodes, hardware parameters, communication settings, MAC configuration, and energy profile.
 
 The repository also contain generated results for the example experiments. These include detailed PHY matrices, compact PHY information to be used in the energy/MAC layers, experiment metadata, per-node CSV results, and figures. Such outputs should be interpreted together with the design dictionary, configuration, software revision, MAC seed set, number of seeds, simulation duration, and PHY/MAC thresholds used to generate them.
 
@@ -68,7 +67,7 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -e .
 ```
-
+It is highly recommended to use a virtual environment.
 ---
 ### Main Simulation Workflow
 
@@ -106,10 +105,10 @@ results = energy.get_results_df()
 
 The `PhyNet` constructor performs the following operations:
 
-1. loads or creates an `EnLightConfig`;
+1. loads the simulation parameters;
 2. constructs the room using `RoomBuilder` and `Room`;
 3. parses sensor and master-node definitions;
-4. optionally parses ambient optical sources;
+4. parses ambient optical sources;
 5. creates sensor, master, and ambient-node managers;
 6. computes LoS, diffuse, RIS, RF, and ambient gains;
 7. computes receiver noise and bandwidths;
@@ -184,7 +183,7 @@ energy = EnergyManager(
 energy.save_csv("experiment_1_results.csv")
 ```
 
-The exact node dictionary should be copied from a validated scenario file such as `design_A1.py`, `design_B1.py`, or `design_C.py`, because the current node schema is broad and several fields are hardware-dependent.
+It is recommended to start with a validated scenario file such as `design_A.py`, `design_B.py`, or `design_C.py`.
 
 ---
 ### Output Organization
@@ -210,82 +209,10 @@ Recommended interpretation:
 The PHY matrices and energy results are separate artifacts. They may be stored in the same experiment directory, but they are not produced as one combined file.
 
 ---
-### Reproducibility
-
-For reproducible studies:
-
-1. store the complete design dictionary;
-2. store the complete `EnLightConfig`;
-3. record the MAC mode and BTMA setting;
-4. record all random seeds;
-5. record simulation duration;
-6. record wall and RIS resolutions;
-7. record the SNR and busy-tone thresholds;
-8. save PHY telemetry rather than recomputing it implicitly;
-9. keep the software revision or Git commit;
-10. preserve per-seed results when confidence intervals are required.
-
-MAC results depend on random initial packet offsets, backoff values, link-success draws, and traffic generation. Reporting only the mean without seed count and dispersion is insufficient.
-
 ---
-### Validation Recommendations
-
-The following checks are recommended for every new scenario.
-
-#### Geometry
-
-- all positions lie inside the room;
-- normals have unit magnitude;
-- Tx and Rx normals point in the intended directions;
-- special surfaces lie on the intended walls;
-- blocker dimensions and positions are physically valid.
-
-#### Optical PHY
-
-- LoS gain decreases with distance;
-- gains are zero outside the receiver FOV;
-- blocked LoS links are removed;
-- diffuse gain increases with surface reflectivity;
-- RIS gain disappears when the RIS is removed;
-- received current scales linearly with optical Tx power.
-
-#### RF PHY
-
-- received power decreases with distance;
-- RF sensitivity is expressed in the expected dB units;
-- shadowing and deterministic path loss are not counted twice.
-
-#### Receiver model
-
-- PD nodes include TIA noise and current;
-- PV nodes exclude TIA current;
-- PV bandwidth is sufficient for the configured downlink rate;
-- ambient light increases shot noise;
-- harvesting power is nonzero only for PV nodes.
-
-#### MAC
-
-- a single unblocked node has no collisions;
-- delivery decreases when uplink PHY availability is set to zero;
-- ACK failures increase retransmissions;
-- hidden nodes increase collisions;
-- BTMA reduces collisions when the busy tone is visible;
-- random initial offsets prevent artificial synchronization.
-
-#### Energy
-
-- Tx energy scales with Tx attempts and Tx duration;
-- CCA energy scales with CCA time;
-- sleep time is not negative;
-- daily energy equals cycle energy times cycles per day;
-- harvested energy is zero for non-PV sensors;
-- battery lifetime responds monotonically to net daily drain.
-
----
-
 ## Requirements
 
-The current beta version was tested with Python 3.11 and the following package versions:
+The current version was tested with Python 3.11 and the following package versions:
 
 ```text
 numpy==2.4.6
@@ -296,12 +223,6 @@ pandas==3.0.3
 ```
 
 These exact versions are recorded in `requirements-lock.txt` for reproducibility. The package may also work with other compatible versions.
-
-Install the package from the repository root using:
-
-```bash
-python -m pip install -e .
-```
 
 ## Code Information
 
@@ -1959,25 +1880,6 @@ energy.save_csv("energy_results.csv")
 ```
 
 The output contains node-level communication, energy, harvesting, and battery metrics. When MAC is enabled, MAC statistics are included where available.
-
----
-
-## Citations
-
-For research use, document:
-
-- the version or commit of `pyenlight`;
-- the complete scenario configuration;
-- the optical and RF channel assumptions;
-- hardware parameters;
-- MAC mode;
-- number of seeds;
-- simulation time;
-- PHY thresholds;
-- whether Tx power was fixed or obtained from `budget_run`;
-- whether BTMA, blockage, RIS, ambient light, and diffuse reflections were enabled.
-
-Results from the framework are model-dependent. They should be reported together with the assumptions that produced them, particularly for PV bandwidth, blocker geometry, RIS discretization, MAC thresholds, and device currents.
 
 ---
 

@@ -141,7 +141,6 @@ def calculate_blockage_mask(tx_r, rx_r, blocker_pos, r_h=0.3, h_h=1.7):
     z_max_seg = np.maximum(z_entry, z_exit)
     
     # Human cylinder occupies Z-space from 0 to h_h
-    # FIXED: >= 0 to include floor-grazing rays at z=0
     is_hitting_body = (z_min_seg < h_h) & (z_max_seg >= 0)
     
     # 4. Vertical Ray Check (Tx and Rx are vertically aligned, ray_len_2d ≈ 0)
@@ -150,7 +149,6 @@ def calculate_blockage_mask(tx_r, rx_r, blocker_pos, r_h=0.3, h_h=1.7):
     
     z_min_ray = np.minimum(z_tx_b, z_rx_b)
     z_max_ray = np.maximum(z_tx_b, z_rx_b)
-    # FIXED: >= 0 to include floor-grazing rays at z=0
     z_overlap = (z_min_ray < h_h) & (z_max_ray >= 0)
     
     vertical_hit = is_vertical & (dist_to_A_2d < r_h) & z_overlap
@@ -249,7 +247,7 @@ def align_to(r_rec, r_tra):
     # Broadcasting handles the subtraction for single or multiple receiver positions.
     displacement = r_tra - r_rec
 
-    # 2. Calculate the magnitude (L2 norm) of the displacement vector(s)
+    # 2. Calculate the magnitude of the displacement vectors
     # axis=-1 ensures the norm is calculated along the vector components (the last axis).
     # keepdims=True ensures the norm can be correctly broadcast back for division.
     norm = np.linalg.norm(displacement, axis=-1, keepdims=True)

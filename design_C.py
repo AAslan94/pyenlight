@@ -11,7 +11,7 @@ def generate_focusing_normals(center, dims, resolution, const_axis, light_pos, t
     dim_1, dim_2 = dims
     res_1, res_2 = resolution
 
-    # Recreate the exact spatial grid of the RIS sub-elements
+
     grid_1 = np.linspace(-dim_1/2 + dim_1/res_1/2, dim_1/2 - dim_1/res_1/2, res_1)
     grid_2 = np.linspace(-dim_2/2 + dim_2/res_2/2, dim_2/2 - dim_2/res_2/2, res_2)
     mesh_1, mesh_2 = np.meshgrid(grid_1, grid_2)
@@ -23,19 +23,19 @@ def generate_focusing_normals(center, dims, resolution, const_axis, light_pos, t
 
     r_patches = np.array(center) + offsets.reshape(-1, 3) 
 
-    # 1. Vector pointing FROM patches TO the Ceiling Light (Incidence)
+    # 1. Vector pointing from RIS patches tO the Ceiling Light (Incidence)
     v_in = np.array(light_pos) - r_patches
     v_in = v_in / np.linalg.norm(v_in, axis=1, keepdims=True)
 
-    # 2. Vector pointing FROM patches TO the Floor Target (Reflection)
+    # 2. Vector pointing from RIS patches to the Target (Reflection)
     v_out = np.array(target_pos) - r_patches
     v_out = v_out / np.linalg.norm(v_out, axis=1, keepdims=True)
 
-    # 3. The Bisector: Perfectly splits the difference for each individual patch
+    # 3. The Bisector
     normals = v_in + v_out
     normals = normals / np.linalg.norm(normals, axis=1, keepdims=True)
 
-    # Return as a standard Python list to avoid JSON serialization crashes!
+    
     return normals
 
 # --- Calculate the focusing array for RIS 1 ---
@@ -80,11 +80,10 @@ master_design_example = {
             {
                 "type": "RIS",
                 "name": "Mirror 1 (Targets Blocker 1 Shadow)",
-                "center": [5.0, 1.5, 2], # Placed high on the East Wall
+                "center": [5.0, 1.5, 2], 
                 "dims": [1.0, 1.0],        # 1 square meter
                 "const_axis": 0,           # Constant on the X axis
                 "resolution": [10, 10],
-                # calculated bisector to bounce light specifically to [4.5, 0.2, 0.0]
                 "normal":ris1_focus_normals, 
                 "reflectivity": 0.95
             },
@@ -96,7 +95,6 @@ master_design_example = {
                 "dims": [1.0, 1.0],        # 1 square meter
                 "const_axis": 0,           # Constant on the X axis
                 "resolution": [10, 10],
-                # calculated bisector to bounce light specifically to [4.5, 0.2, 0.0]
                 "normal":ris2_focus_normals, 
                 "reflectivity": 0.95
             },
@@ -138,7 +136,7 @@ master_design_example = {
             "VLC_pass_filter": False
         },
        # "ambient_nodes": {
-       #     "positions": np.array([[1.0, 2.5, 3.0], [4.0, 2.5, 3.0]]), # Interfering lamps
+       #     "positions": np.array([[1.0, 2.5, 3.0], [4.0, 2.5, 3.0]]), # Interfering lamps -- not used
        #     "nT": [0, 0, -1],
        #     "nR": [0, 0, -1],
           

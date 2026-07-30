@@ -59,7 +59,7 @@ master_design_example = {
             "VLC_pass_filter": False
         },
        # "ambient_nodes": {
-       #     "positions": np.array([[1.0, 2.5, 3.0], [4.0, 2.5, 3.0]]), # Interfering lamps
+       #     "positions": np.array([[1.0, 2.5, 3.0], [4.0, 2.5, 3.0]]), # Interfering lamps -- not used
        #     "nT": [0, 0, -1],
        #     "nR": [0, 0, -1],
           

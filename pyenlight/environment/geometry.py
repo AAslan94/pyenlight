@@ -85,12 +85,12 @@ class OpticalRxElements(Elements):
     fov: np.ndarray = None
     refl: np.ndarray = None
     type_Rx: np.ndarray = None
-    config: EnLightConfig = field(default_factory=EnLightConfig) # <--- THE SAFETY NET
+    config: EnLightConfig = field(default_factory=EnLightConfig) 
 
     def __post_init__(self):
         super().__post_init__()
         
-        # If values are missing, fall back to the config (just like SimulationDefaults did)
+        # If values are missing, fall back to the config 
         if self.A is None: self.A = self.config.env.rx_area
         if self.fov is None: self.fov = self.config.env.fov
         if self.refl is None: self.refl = self.config.env.reflectivity
@@ -105,7 +105,7 @@ class OpticalRxElements(Elements):
 class OpticalTxElements(Elements):
     p: np.ndarray = None
     m: np.ndarray = None
-    config: EnLightConfig = field(default_factory=EnLightConfig) # <--- THE SAFETY NET
+    config: EnLightConfig = field(default_factory=EnLightConfig) 
 
     def __post_init__(self):
         super().__post_init__()
@@ -144,13 +144,13 @@ class Surface:
         self.P = 0 if P is None else P
 
         if self.type == "window":
-            # 1. Instantiate the SpectralPhysics object using the config
+            
             sp = SpectralPhysics(self.config)
             
-            # 2. Call the method on the instance to get the ~10^-6 integral
+            
             spectral_integral = sp.sun_power()
             
-            # 3. Apply the math: pd_peak * Area * integral * user_multiplier (e.g., 0.8)
+            
             self.P = self.config.physics.pd_peak * self.A * spectral_integral
             print("power is "+ str(self.P))
 

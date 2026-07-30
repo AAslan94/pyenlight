@@ -17,7 +17,7 @@ class PhyResultsDTO:
     # 3. MAC Simulation Arrays
     snr_d_dB: np.ndarray
     snr_ss_dB: np.ndarray
-    snr_u_dB: np.ndarray  # Note: Kept as 2D array to preserve np.max(axis=1) logic
+    snr_u_dB: np.ndarray  
     phy_pdr_up_rf: np.ndarray
     hidden_node_mask_rf: np.ndarray
     

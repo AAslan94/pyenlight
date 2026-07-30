@@ -17,7 +17,7 @@ class PhysicsConfig:
     
 
    
-    # Static orientation vectors
+    # orientation vectors
     zp: np.ndarray = field(default_factory=lambda: np.array([0, 0, 1]))
     zm: np.ndarray = field(default_factory=lambda: np.array([0, 0, -1]))
     xp: np.ndarray = field(default_factory=lambda: np.array([1, 0, 0]))
@@ -99,7 +99,7 @@ class DeviceConfig:
         'RF': 1e6, 'Vn': 15e-9, 'In': 400e-15,
         'fncV': 1e3, 'fncI': 1e3, 'temperature': 300.0
     })
-    # PV Physics defaults - ADDED 'A' HERE TO PREVENT DIVIDE-BY-ZERO
+    # PV Physics defaults 
     pv_circuit: Dict = field(default_factory=lambda: {
         'A': 1e-4, 'n': 1.6, 'Rs': 1.0, 'Rsh': 1000.0, 'Voc': 0.64, 'Jsc': 35e-3,
         'Lo': 1e-6, 'Co': 1e-6, 'Rc': 10.0, 

@@ -41,7 +41,7 @@ class EnergyManager:
         self.u_prot = design.get('protocol', {})
         self.u_mpp  = design.get('MPP', {})
 
-        # 0. Drivers (Fixed: Passing self.config)
+        # 0. Drivers 
         self.ir_driver = IRdriver(self.config, **self.u_prof.get('IRDriver', {}))
         self.rf_config = self.u_prof.get('RFDriver', {})
 
@@ -248,7 +248,7 @@ class EnergyManager:
                 hidden_node_mask = snr_ss_ir_dB < SNR_THRESHOLD_dB
                 np.fill_diagonal(hidden_node_mask, False)
 
-                # Mapping 3 (Cont): Uplink SNR (Axis=1 maxing preserved)
+                
                 snr_up_dB = np.max(self.phy_data.snr_u_dB, axis=1).flatten() 
                 
                 phy_pdr_down_ir = global_phy_pdr_down[self.ir_m]
@@ -259,7 +259,7 @@ class EnergyManager:
                 bt_hidden_mask = None
                 if self.btma_mode:
                     BUSY_TONE_THRESHOLD_dB = self.mac_bt_th
-                    # Mapping 3 (Cont): BTMA check
+                    
                     bt_hidden_mask = self.phy_data.snr_d_dB[self.ir_m] < BUSY_TONE_THRESHOLD_dB
                     
                 mean_rb_up_ir = float(np.mean(self.Rb_up[self.ir_m]))
@@ -334,7 +334,7 @@ class EnergyManager:
         # ── Map Results Back to Global Arrays ─────────────────────────────────
         # ======================================================================
         
-        # ── 1. Map IR Data ──
+        # map IR Data ──
         ir_indices = np.where(self.ir_m)[0]
         if len(ir_indices) > 0 and hasattr(self, 'MAC_result_ir'):
             per_node_ir = self.MAC_result_ir.get('per_node', None)
@@ -368,7 +368,7 @@ class EnergyManager:
                     self._mac_blockage       [sensor_idx] = mu.get('drop_no_access', 0.0)
                     self._mac_retries        [sensor_idx] = mu.get('avg_retries_per_pkt', 0.0)
 
-        # ── 2. Map RF Data ──
+        # map RF Data ──
         rf_indices = np.where(self.rf_m)[0]
         if len(rf_indices) > 0 and hasattr(self, 'MAC_result_rf'):
             per_node_rf = self.MAC_result_rf.get('per_node', None)

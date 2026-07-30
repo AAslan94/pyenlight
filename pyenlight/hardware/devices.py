@@ -17,7 +17,6 @@ class TIA:
         self.In = kwargs.get('In', d['In'])
         self.fncV = kwargs.get('fncV', d['fncV'])
         self.fncI = kwargs.get('fncI', d['fncI'])
-        # Pull temperature from the core physics config if not provided
         self.temperature = kwargs.get('temperature', self.config.physics.T)
 
     def CF(self, B):
@@ -174,7 +173,7 @@ class PV:
         if not hasattr(self, 'Isc'): self.Isc = self.Jsc
         self.Iph = self.Isc.copy()
         
-        # Pulled from core physics config
+       
         self.Vt = self.config.physics.kB * self.config.physics.T / self.config.physics.q
 
         self.Iph *= (self.Gamb + self.Gsignal) / self.Gref
@@ -204,7 +203,7 @@ class PV:
         return term_linear - (nVt / Rs) * w_val
 
     def calc_capacitance(self):
-        # Pulled from core physics config
+        
         es = self.er * self.config.physics.eo
         q = self.config.physics.q
 
@@ -239,7 +238,7 @@ class PV:
         self.hpv = np.abs(h1 * h2 * self.Rc[..., None])
 
     def _thermal_noise_base(self):
-        # Pulled from core physics config
+        
         kT = 4 * self.config.physics.kB * self.config.physics.T
         self.No_r = kT * self.r
         self.No_Rs = kT * self.Rs
@@ -316,7 +315,6 @@ class PV:
     def shot_noise(self, f):
         t = np.abs(self.hpv)**2
         integral = np.trapezoid(t, f[:, None, :], axis=2)
-        # Pulled from core physics config
         self.sh_noise = 2 * self.config.physics.q * self.Iph * integral
 
 

@@ -14,9 +14,9 @@ master_design_example = {
             {
                 "type": "window",
                 "name": "West Window",
-                "center": [0, 2.5, 1.5], # On the south wall (y=0)
+                "center": [0, 2.5, 1.5], # On the south wall (x=0)
                 "dims": [1, 1],
-                "const_axis": 0,           # Constant on the Y axis
+                "const_axis": 0,           # Constant on the X axis
                 "resolution": [20, 20],
                 "normal": [1, 0, 0],       # Pointing into the room
                 "reflectivity": 0.05,
@@ -59,7 +59,7 @@ master_design_example = {
         "communication": {
             "Rb_down": 10e3,  # Downlink Bitrate
             "n_sp_d": 0.4,    # Downlink spectral efficiency
-            "Rb_up": 10e3,    # Uplink Bitrate (can also be array per sensor)
+            "Rb_up": 10e3,    # Uplink Bitrate 
             "n_sp_u": 0.4     # Uplink spectral efficiency
         }
     },

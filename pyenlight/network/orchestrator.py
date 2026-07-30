@@ -21,7 +21,6 @@ class oPhyGains:
         
         self.ambient = ambient
         
-        # Initialize the refactored Channel Engine
         self.engine = ChannelEngine(self.config, self.room)
         
         self.compute_gains()
@@ -517,20 +516,20 @@ class PhyNet:
             'ber_uplink': getattr(self, 'BER_u', None),
         }
 
-        # 2. Add PD Downlink isolated SNRs
+        # 2. Add PD Downlink SNRs
         if self.flag_pd.any():
             save_dict['snr_d_pd_los_dB'] = getattr(self, 'snr_d_los_dB', None)
             save_dict['snr_d_pd_diff_dB'] = getattr(self, 'snr_d_diff_dB', None)
             save_dict['snr_d_pd_diff_tot_dB'] = getattr(self, 'snr_d_diff_tot_dB', None)
             save_dict['snr_d_pd_ris_dB'] = getattr(self, 'snr_d_ris_dB', None)
 
-        # 3. Add PV Downlink isolated Optical Gains
+        # 3. Add PV Downlink Optical Gains
         if self.flag_pv.any():
             save_dict['g_d_pv_los_opt_gain'] = getattr(self, 'g_d_los_total', None)
             save_dict['g_d_pv_diff_opt_gain'] = getattr(self, 'g_d_diff_total', None)
             save_dict['g_d_pv_ris_opt_gain'] = getattr(self, 'g_d_ris_total', None)
 
-        # 4. Add OW Uplink isolated SNRs
+        # 4. Add OW Uplink SNRs
         if self.snm.ir_flag > 0:
             save_dict['snr_u_ow_los_dB'] = getattr(self, 'snr_u_los_sel', None)
             save_dict['snr_u_ow_diff_dB'] = getattr(self, 'snr_u_diff_sel', None)

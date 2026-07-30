@@ -62,7 +62,7 @@ master_design_example = {
         "communication": {
             "Rb_down": u_b,  # Downlink Bitrate
             "n_sp_d": 0.4,    # Downlink spectral efficiency
-            "Rb_up": 250e3,    # Uplink Bitrate (can also be array per sensor)
+            "Rb_up": 250e3,    # Uplink Bitrate 
         }
     },
     

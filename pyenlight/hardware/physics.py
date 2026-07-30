@@ -12,7 +12,6 @@ class SpectralPhysics:
         self.config = config
         
         # Pre-define the spectrum configurations for easy lookup
-        # Storing actual method references instead of strings makes it much safer
         self.CONFIGURATIONS = {
             "WLED2PD":   (self.white_led_spectrum, self.photodiode_responsivity, "ALL_PASS"),
             "WLED2PDwF": (self.white_led_spectrum, self.photodiode_responsivity, "VLC_PASS"),

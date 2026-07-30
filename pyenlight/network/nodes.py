@@ -34,7 +34,7 @@ class NodeBuilder():
         self.N_nodes = self.positions.shape[0]
 
         # --- 2. Geometric & Optical Defaults ---
-        # fallbacks now point to EnLightConfig
+        # fallbacks point to EnLightConfig
         self.rx_area = node_group.get("rx_area", self.config.env.rx_area)
         self.m = node_group.get("m", self.config.env.m)
         self.FOV = node_group.get("FOV", self.config.env.fov)
@@ -43,7 +43,7 @@ class NodeBuilder():
         self.rx_type = as_array_of_size(node_group.get("rx_type", 0), self.N_nodes)
         self.uplink_type = node_group.get("uplink_type", self.config.comm.uplink_type)
         
-        # --- 4. Electrical & Transmit Power ---
+        # --- 4. Transmit Power ---
         self.tx_power = node_group.get("tx_power", self.config.comm.VLC_Tx_power)
         self.IR_tx_power = node_group.get("IR_tx_power", self.config.comm.IR_Tx_power)
         self.RF_tx_power = node_group.get("RF_tx_power", self.config.devices.rf_driver['p_min'])

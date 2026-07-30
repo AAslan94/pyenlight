@@ -86,32 +86,6 @@ python -m pip install -e .
 
 A minimal high-level workflow is:
 
-```python
-from pyenlight.core.config import EnLightConfig
-from pyenlight.network.orchestrator import PhyNet
-from pyenlight.hardware.energy import EnergyManager
-
-config = EnLightConfig()
-
-phy = PhyNet(
-    design,
-    budget_run=False,
-    config=config,
-    btma_mode=True,
-)
-
-telemetry = phy.export_energy_telemetry()
-
-energy = EnergyManager(
-    phy_data=telemetry,
-    design=design,
-    config=config,
-    MAC=True,
-    btma_mode=True,
-    MAC_mode="unslotted",
-)
-
-results = energy.get_results_df()
 ```
 
 #### Execution sequence inside `PhyNet`
@@ -132,71 +106,10 @@ The `PhyNet` constructor performs the following operations:
 Thus, creating `PhyNet` is not a lightweight configuration operation. It executes the complete PHY calculation.
 
 ---
-### Example End-to-End Script
 
-```python
-from pyenlight.core.config import EnLightConfig
-from pyenlight.network.orchestrator import PhyNet
-from pyenlight.hardware.energy import EnergyManager
-
-config = EnLightConfig()
-
-design = {
-    "environment": {
-        "dimensions": [5.0, 5.0, 3.0],
-        "wall_resolution": [20, 20],
-        "reflectivity": {
-            "floor": 0.2,
-            "ceiling": 0.6,
-            "walls": 0.8,
-        },
-        "special_surfaces": [],
-    },
-    "nodes": {
-        # Insert the complete master- and sensor-node dictionaries
-        # used by the scenario files in this repository.
-    },
-    "protocol": {
-        "T_cycle": 60.0,
-        "harvesting_hours": 5.0,
-    },
-    "energy_profile": {
-        "MAC": {
-            "sim_time_us": 3000e6,
-            "n_seeds": 150,
-            "SNR_THRESHOLD_dB": 8.5,
-            "BUSY_TONE_THRESHOLD_dB": 8.5,
-            "log": True,
-            "debug": False,
-        }
-    },
-}
-
-phy = PhyNet(
-    design,
-    budget_run=False,
-    config=config,
-    btma_mode=True,
-)
-
-phy.save_phy_state("experiment_1_phy_matrices.npz")
-
-telemetry = phy.export_energy_telemetry()
-telemetry.save_npz("experiment_1_phy_telemetry.npz")
-
-energy = EnergyManager(
-    phy_data=telemetry,
-    design=design,
-    config=config,
-    MAC=True,
-    btma_mode=True,
-    MAC_mode="unslotted",
-)
-
-energy.save_csv("experiment_1_results.csv")
-```
-
-It is recommended to start with a validated scenario file such as `design_A.py`.
+It is recommended to start with a validated scenario file such as `design_A.py` to check if everything executes as expected. 
+'design_example.py' is an example of a fully configured design dictionary. Use it to define your scenario if you need full control.
+More details can be found on the user's guide.
 
 ---
 ### Output Organization

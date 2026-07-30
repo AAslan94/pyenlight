@@ -40,6 +40,269 @@ pyenlight is primarily a simulation library and does not require a standalone in
 
 The repository also contain generated results for the example experiments. These include detailed PHY matrices, compact PHY information to be used in the energy/MAC layers, experiment metadata, per-node CSV results, and figures. Such outputs should be interpreted together with the design dictionary, configuration, software revision, MAC seed set, number of seeds, simulation duration, and PHY/MAC thresholds used to generate them.
 
+## Usage Instructions
+
+### Installation
+
+The package requires Python 3.8 or later.
+
+```bash
+pip install -e .
+```
+
+The current `setup.py` declares:
+
+```text
+numpy
+scipy
+matplotlib
+simpy
+pandas
+```
+
+A typical environment can be created with:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+```
+
+---
+### Main Simulation Workflow
+
+A minimal high-level workflow is:
+
+```python
+from pyenlight.core.config import EnLightConfig
+from pyenlight.network.orchestrator import PhyNet
+from pyenlight.hardware.energy import EnergyManager
+
+config = EnLightConfig()
+
+phy = PhyNet(
+    design,
+    budget_run=False,
+    config=config,
+    btma_mode=True,
+)
+
+telemetry = phy.export_energy_telemetry()
+
+energy = EnergyManager(
+    phy_data=telemetry,
+    design=design,
+    config=config,
+    MAC=True,
+    btma_mode=True,
+    MAC_mode="unslotted",
+)
+
+results = energy.get_results_df()
+```
+
+#### 4.1 Execution sequence inside `PhyNet`
+
+The `PhyNet` constructor performs the following operations:
+
+1. loads or creates an `EnLightConfig`;
+2. constructs the room using `RoomBuilder` and `Room`;
+3. parses sensor and master-node definitions;
+4. optionally parses ambient optical sources;
+5. creates sensor, master, and ambient-node managers;
+6. computes LoS, diffuse, RIS, RF, and ambient gains;
+7. computes receiver noise and bandwidths;
+8. optionally determines required Tx power when `budget_run=True`;
+9. computes received powers and currents;
+10. computes SNR and related PHY metrics.
+
+Thus, creating `PhyNet` is not a lightweight configuration operation. It executes the complete PHY calculation.
+
+---
+### Example End-to-End Script
+
+```python
+from pyenlight.core.config import EnLightConfig
+from pyenlight.network.orchestrator import PhyNet
+from pyenlight.hardware.energy import EnergyManager
+
+config = EnLightConfig()
+
+design = {
+    "environment": {
+        "dimensions": [5.0, 5.0, 3.0],
+        "wall_resolution": [20, 20],
+        "reflectivity": {
+            "floor": 0.2,
+            "ceiling": 0.6,
+            "walls": 0.8,
+        },
+        "special_surfaces": [],
+    },
+    "nodes": {
+        # Insert the complete master- and sensor-node dictionaries
+        # used by the scenario files in this repository.
+    },
+    "protocol": {
+        "T_cycle": 60.0,
+        "harvesting_hours": 5.0,
+    },
+    "energy_profile": {
+        "MAC": {
+            "sim_time_us": 3000e6,
+            "n_seeds": 150,
+            "SNR_THRESHOLD_dB": 8.5,
+            "BUSY_TONE_THRESHOLD_dB": 8.5,
+            "log": True,
+            "debug": False,
+        }
+    },
+}
+
+phy = PhyNet(
+    design,
+    budget_run=False,
+    config=config,
+    btma_mode=True,
+)
+
+phy.save_phy_state("experiment_1_phy_matrices.npz")
+
+telemetry = phy.export_energy_telemetry()
+telemetry.save_npz("experiment_1_phy_telemetry.npz")
+
+energy = EnergyManager(
+    phy_data=telemetry,
+    design=design,
+    config=config,
+    MAC=True,
+    btma_mode=True,
+    MAC_mode="unslotted",
+)
+
+energy.save_csv("experiment_1_results.csv")
+```
+
+The exact node dictionary should be copied from a validated scenario file such as `design_A1.py`, `design_B1.py`, or `design_C.py`, because the current node schema is broad and several fields are hardware-dependent.
+
+---
+### Output Organization
+
+A reproducible experiment should store at least:
+
+```text
+experiment_name_metadata.json
+experiment_name_phy_matrices.npz
+experiment_name_phy_telemetry.npz
+experiment_name_results.csv
+```
+
+Recommended interpretation:
+
+| File | Purpose |
+|---|---|
+| metadata JSON | design, configuration, seed, and run metadata |
+| PHY matrices NPZ | detailed channel and PHY arrays |
+| PHY telemetry NPZ | compact PHY-to-energy/MAC interface |
+| results CSV | per-node and aggregate output |
+
+The PHY matrices and energy results are separate artifacts. They may be stored in the same experiment directory, but they are not produced as one combined file.
+
+---
+### Reproducibility
+
+For reproducible studies:
+
+1. store the complete design dictionary;
+2. store the complete `EnLightConfig`;
+3. record the MAC mode and BTMA setting;
+4. record all random seeds;
+5. record simulation duration;
+6. record wall and RIS resolutions;
+7. record the SNR and busy-tone thresholds;
+8. save PHY telemetry rather than recomputing it implicitly;
+9. keep the software revision or Git commit;
+10. preserve per-seed results when confidence intervals are required.
+
+MAC results depend on random initial packet offsets, backoff values, link-success draws, and traffic generation. Reporting only the mean without seed count and dispersion is insufficient.
+
+---
+### Validation Recommendations
+
+The following checks are recommended for every new scenario.
+
+#### Geometry
+
+- all positions lie inside the room;
+- normals have unit magnitude;
+- Tx and Rx normals point in the intended directions;
+- special surfaces lie on the intended walls;
+- blocker dimensions and positions are physically valid.
+
+#### Optical PHY
+
+- LoS gain decreases with distance;
+- gains are zero outside the receiver FOV;
+- blocked LoS links are removed;
+- diffuse gain increases with surface reflectivity;
+- RIS gain disappears when the RIS is removed;
+- received current scales linearly with optical Tx power.
+
+#### RF PHY
+
+- received power decreases with distance;
+- RF sensitivity is expressed in the expected dB units;
+- shadowing and deterministic path loss are not counted twice.
+
+#### Receiver model
+
+- PD nodes include TIA noise and current;
+- PV nodes exclude TIA current;
+- PV bandwidth is sufficient for the configured downlink rate;
+- ambient light increases shot noise;
+- harvesting power is nonzero only for PV nodes.
+
+#### MAC
+
+- a single unblocked node has no collisions;
+- delivery decreases when uplink PHY availability is set to zero;
+- ACK failures increase retransmissions;
+- hidden nodes increase collisions;
+- BTMA reduces collisions when the busy tone is visible;
+- random initial offsets prevent artificial synchronization.
+
+#### Energy
+
+- Tx energy scales with Tx attempts and Tx duration;
+- CCA energy scales with CCA time;
+- sleep time is not negative;
+- daily energy equals cycle energy times cycles per day;
+- harvested energy is zero for non-PV sensors;
+- battery lifetime responds monotonically to net daily drain.
+
+---
+
+## Requirements
+
+The current beta version was tested with Python 3.11 and the following package versions:
+
+```text
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.11.0
+simpy==4.1.2
+pandas==3.0.3
+```
+
+These exact versions are recorded in `requirements-lock.txt` for reproducibility. The package may also work with other compatible versions.
+
+Install the package from the repository root using:
+
+```bash
+python -m pip install -e .
+```
+
 ## Code Information
 
 ### Package Structure
@@ -711,7 +974,7 @@ telemetry.save_npz("experiment_1_phy_telemetry.npz")
 Reload it using:
 
 ```python
-from enlight_iot.core.interface import PhyResultsDTO
+from pyenlight.core.interface import PhyResultsDTO
 
 telemetry = PhyResultsDTO.load_npz(
     "experiment_1_phy_telemetry.npz"
@@ -1071,274 +1334,30 @@ A full PHY calculation should not be repeated for every MAC seed when geometry a
 
 ---
 
-## Usage Instructions
+### The `pd_peak` field
 
-### Installation
-
-The package requires Python 3.8 or later.
-
-```bash
-pip install -e .
-```
-
-The current `setup.py` declares:
-
-```text
-numpy
-scipy
-matplotlib
-simpy
-```
-
-The energy module also uses `pandas`; therefore, install it explicitly when energy results are required:
-
-```bash
-pip install pandas
-```
-
-A typical environment can be created with:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -e .
-pip install pandas
-```
-
----
-### Main Simulation Workflow
-
-A minimal high-level workflow is:
+`PhysicsConfig` defines:
 
 ```python
-from enlight_iot.core.config import EnLightConfig
-from enlight_iot.network.orchestrator import PhyNet
-from enlight_iot.hardware.energy import EnergyManager
-
-config = EnLightConfig()
-
-phy = PhyNet(
-    design,
-    budget_run=False,
-    config=config,
-    btma_mode=True,
-)
-
-telemetry = phy.export_energy_telemetry()
-
-energy = EnergyManager(
-    phy_data=telemetry,
-    design=design,
-    config=config,
-    MAC=True,
-    btma_mode=True,
-    MAC_mode="unslotted",
-)
-
-results = energy.get_results_df()
+pd_peak: float = 2e9
 ```
 
-#### 4.1 Execution sequence inside `PhyNet`
-
-The `PhyNet` constructor performs the following operations:
-
-1. loads or creates an `EnLightConfig`;
-2. constructs the room using `RoomBuilder` and `Room`;
-3. parses sensor and master-node definitions;
-4. optionally parses ambient optical sources;
-5. creates sensor, master, and ambient-node managers;
-6. computes LoS, diffuse, RIS, RF, and ambient gains;
-7. computes receiver noise and bandwidths;
-8. optionally determines required Tx power when `budget_run=True`;
-9. computes received powers and currents;
-10. computes SNR and related PHY metrics.
-
-Thus, creating `PhyNet` is not a lightweight configuration operation. It executes the complete PHY calculation.
-
----
-### Example End-to-End Script
-
-```python
-from enlight_iot.core.config import EnLightConfig
-from enlight_iot.network.orchestrator import PhyNet
-from enlight_iot.hardware.energy import EnergyManager
-
-config = EnLightConfig()
-
-design = {
-    "environment": {
-        "dimensions": [5.0, 5.0, 3.0],
-        "wall_resolution": [20, 20],
-        "reflectivity": {
-            "floor": 0.2,
-            "ceiling": 0.6,
-            "walls": 0.8,
-        },
-        "special_surfaces": [],
-    },
-    "nodes": {
-        # Insert the complete master- and sensor-node dictionaries
-        # used by the scenario files in this repository.
-    },
-    "protocol": {
-        "T_cycle": 60.0,
-        "harvesting_hours": 5.0,
-    },
-    "energy_profile": {
-        "MAC": {
-            "sim_time_us": 3000e6,
-            "n_seeds": 150,
-            "SNR_THRESHOLD_dB": 8.5,
-            "BUSY_TONE_THRESHOLD_dB": 8.5,
-            "log": True,
-            "debug": False,
-        }
-    },
-}
-
-phy = PhyNet(
-    design,
-    budget_run=False,
-    config=config,
-    btma_mode=True,
-)
-
-phy.save_phy_state("experiment_1_phy_matrices.npz")
-
-telemetry = phy.export_energy_telemetry()
-telemetry.save_npz("experiment_1_phy_telemetry.npz")
-
-energy = EnergyManager(
-    phy_data=telemetry,
-    design=design,
-    config=config,
-    MAC=True,
-    btma_mode=True,
-    MAC_mode="unslotted",
-)
-
-energy.save_csv("experiment_1_results.csv")
-```
-
-The exact node dictionary should be copied from a validated scenario file such as `design_A1.py`, `design_B1.py`, or `design_C.py`, because the current node schema is broad and several fields are hardware-dependent.
-
----
-### Output Organization
-
-A reproducible experiment should store at least:
+This parameter represents the **peak spectral irradiance used to scale the normalized solar spectrum**. The solar spectrum is generated from a black-body model and normalized by its maximum value. Multiplication by `pd_peak` restores the intended absolute spectral scale:
 
 ```text
-experiment_name_metadata.json
-experiment_name_phy_matrices.npz
-experiment_name_phy_telemetry.npz
-experiment_name_results.csv
+S_sun(lambda) = pd_peak * B(lambda, T_sun) / max[B(lambda, T_sun)]
 ```
 
-Recommended interpretation:
+where `B(lambda, T_sun)` is the black-body spectral distribution at the configured solar temperature.
 
-| File | Purpose |
-|---|---|
-| metadata JSON | design, configuration, seed, and run metadata |
-| PHY matrices NPZ | detailed channel and PHY arrays |
-| PHY telemetry NPZ | compact PHY-to-energy/MAC interface |
-| results CSV | per-node and aggregate output |
+Accordingly:
 
-The PHY matrices and energy results are separate artifacts. They may be stored in the same experiment directory, but they are not produced as one combined file.
+- `pd_peak` is associated with the solar spectrum, not the photodiode;
+- its value is `2e9` in the current configuration;
+- it scales the normalized solar spectrum to an absolute spectral-irradiance level;
+- a clearer name would be `sun_spectral_peak`.
 
----
-### Reproducibility
-
-For reproducible studies:
-
-1. store the complete design dictionary;
-2. store the complete `EnLightConfig`;
-3. record the MAC mode and BTMA setting;
-4. record all random seeds;
-5. record simulation duration;
-6. record wall and RIS resolutions;
-7. record the SNR and busy-tone thresholds;
-8. save PHY telemetry rather than recomputing it implicitly;
-9. keep the software revision or Git commit;
-10. preserve per-seed results when confidence intervals are required.
-
-MAC results depend on random initial packet offsets, backoff values, link-success draws, and traffic generation. Reporting only the mean without seed count and dispersion is insufficient.
-
----
-### Validation Recommendations
-
-The following checks are recommended for every new scenario.
-
-#### Geometry
-
-- all positions lie inside the room;
-- normals have unit magnitude;
-- Tx and Rx normals point in the intended directions;
-- special surfaces lie on the intended walls;
-- blocker dimensions and positions are physically valid.
-
-#### Optical PHY
-
-- LoS gain decreases with distance;
-- gains are zero outside the receiver FOV;
-- blocked LoS links are removed;
-- diffuse gain increases with surface reflectivity;
-- RIS gain disappears when the RIS is removed;
-- received current scales linearly with optical Tx power.
-
-#### RF PHY
-
-- received power decreases with distance;
-- RF sensitivity is expressed in the expected dB units;
-- shadowing and deterministic path loss are not counted twice.
-
-#### Receiver model
-
-- PD nodes include TIA noise and current;
-- PV nodes exclude TIA current;
-- PV bandwidth is sufficient for the configured downlink rate;
-- ambient light increases shot noise;
-- harvesting power is nonzero only for PV nodes.
-
-#### MAC
-
-- a single unblocked node has no collisions;
-- delivery decreases when uplink PHY availability is set to zero;
-- ACK failures increase retransmissions;
-- hidden nodes increase collisions;
-- BTMA reduces collisions when the busy tone is visible;
-- random initial offsets prevent artificial synchronization.
-
-#### Energy
-
-- Tx energy scales with Tx attempts and Tx duration;
-- CCA energy scales with CCA time;
-- sleep time is not negative;
-- daily energy equals cycle energy times cycles per day;
-- harvested energy is zero for non-PV sensors;
-- battery lifetime responds monotonically to net daily drain.
-
----
-
-## Requirements
-
-The current beta version was tested with Python 3.11 and the following package versions:
-
-```text
-numpy==2.4.6
-scipy==1.17.1
-matplotlib==3.11.0
-simpy==4.1.2
-pandas==3.0.3
-```
-
-These exact versions are recorded in `requirements-lock.txt` for reproducibility. The package may also work with other compatible versions.
-
-Install the package from the repository root using:
-
-```bash
-python -m pip install -e .
-```
+The parameter name is retained for backward compatibility, although `sun_spectral_peak` would better describe its physical role.
 
 ## Methodology
 
@@ -1947,7 +1966,7 @@ The output contains node-level communication, energy, harvesting, and battery me
 
 For research use, document:
 
-- the version or commit of `enlight_iot`;
+- the version or commit of `pyenlight`;
 - the complete scenario configuration;
 - the optical and RF channel assumptions;
 - hardware parameters;

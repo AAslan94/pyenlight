@@ -82,12 +82,6 @@ python -m pip install -e .
 ```
 
 ---
-### Main Simulation Workflow
-
-A minimal high-level workflow is:
-
-```
-
 #### Execution sequence inside `PhyNet`
 
 The `PhyNet` constructor performs the following operations:

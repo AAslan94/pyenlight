@@ -1,4 +1,4 @@
-# enlight_iot/__init__.py
+# pyenlight/__init__.py
 
 # ── The Core Stack (For running the master simulation) ──
 from .core.config import EnLightConfig

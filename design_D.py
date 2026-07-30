@@ -1,8 +1,8 @@
 import numpy as np
 from pyenlight.core.utils import generate_grid, diagonal_points, align_to 
 
-bw_a1 = np.load("bw_a1.npy")
-u_b = bw_a1.reshape(-1,)*0.4
+bw_d = np.load("bw_d.npy")
+u_b = bw_d.reshape(-1,)*0.4
 
 master_design_example = {
     "environment": {

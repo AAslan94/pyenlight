@@ -241,6 +241,7 @@ pyenlight/
 
 The repository also includes the configuration files, execution scripts, and outputs used for the paper experiments. The files `design_A.py`, `design_B.py`, `design_C.py`, and `design_D.py` define the corresponding simulation scenarios, while `run_A.py`, `run_B.py`, `run_C.py`, and `run_D.py` execute them. The `run_MAC.py` script performs the MAC-specific simulations. The directories `plots/A`, `plots/B`, `plots/C`, and `plots/D` contain the corresponding figures, while the `MAC` directory contains the MAC-specific results and plots. 
 The generated data are stored inside the `data` folder. The subdirectories `results_experiment_A`, `results_experiment_B`, `results_experiment_C`, and `results_experiment_D` contain the saved configurations, PHY results, PHY DTO, and energy/MAC outputs generated for each scenario.
+
 The `bw_d.npy` file contains the bandwidth of the PV-based receivers in Scenario D. The downlink data rate is not automatically limited by the PV receiver bandwidth. Therefore, after each simulation involving PV-based receivers, the required bandwidth for the selected data rate should be compared with the available PV bandwidth. It is easy to generate these data by running the corresponding scenarios.
 
 #### `core`

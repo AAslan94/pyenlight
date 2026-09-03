@@ -156,7 +156,7 @@ if __name__ == "__main__":
         )
 
         cbar = plt.colorbar(im)
-        cbar.set_label('$SNR_d$ [dB]', fontsize=LABEL_SIZE)
+        cbar.set_label('$\mathrm{SNR}_d$ [dB]', fontsize=LABEL_SIZE)
         cbar.ax.tick_params(labelsize=TICK_SIZE)
 
         plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         )
 
         cbar = plt.colorbar(im)
-        cbar.set_label('$SNR_d$ [dB]', fontsize=LABEL_SIZE)
+        cbar.set_label('$\mathrm{SNR}_d$ [dB]', fontsize=LABEL_SIZE)
         cbar.ax.tick_params(labelsize=TICK_SIZE)
 
         plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
@@ -253,7 +253,7 @@ if __name__ == "__main__":
         )
 
         cbar = plt.colorbar(im)
-        cbar.set_label('$SNR_u$ [dB]', fontsize=LABEL_SIZE)
+        cbar.set_label('$\mathrm{SNR}_u$ [dB]', fontsize=LABEL_SIZE)
         cbar.ax.tick_params(labelsize=TICK_SIZE)
 
         plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         )
 
         cbar = plt.colorbar(im)
-        cbar.set_label('$SNR_u$ [dB]', fontsize=LABEL_SIZE)
+        cbar.set_label('$\mathrm{SNR}_u$ [dB]', fontsize=LABEL_SIZE)
         cbar.ax.tick_params(labelsize=TICK_SIZE)
 
         plt.xlabel('$x$ [m]', fontsize=LABEL_SIZE)
